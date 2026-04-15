@@ -421,7 +421,7 @@ function render(){
     content.append(h("div",{className:"cost-cards"},h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#E8927C,#d4765e)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"總費用"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+total.toLocaleString())),h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#7CB5E8,#5a9ad5)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"每人平均"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+perPerson.toLocaleString()))));
     // Pre-trip fixed costs - apply saved edits
     const fe=state.fixedCostEdits||{};
-    COSTS.forEach(c=>{if(fe[c.id]){Object.assign(c,fe[c.id])}});
+    COSTS.forEach(c=>{if(fe[c.id]){const e=fe[c.id];if(e.amount!=null)c.amount=e.amount;if(e.paid!=null)c.paid=e.paid;if(e.paidBy!=null)c.paidBy=e.paidBy;if(e.split)c.split=e.split.slice()}});
     content.append(h("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"8px",color:"#2a2a3e"}},"行前固定費用"));
     COSTS.forEach(c=>{
       const fp=MEMBERS[c.paidBy||0];
@@ -449,7 +449,7 @@ function render(){
             return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:inS?"2px solid "+mem.color:"1.5px solid #eee",background:inS?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"11px",fontWeight:inS?700:500,color:inS?mem.color:"#ccc",fontFamily:"inherit",opacity:inS?1:0.5},onClick:()=>{if(!c.split)c.split=[0,1,2,3];if(inS&&c.split.length>1)c.split=c.split.filter(x=>x!==i);else if(!inS)c.split.push(i);render()}},mem.emoji+(inS?" ✓":""))})),
           h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{
               if(!state.fixedCostEdits)state.fixedCostEdits={};
-              state.fixedCostEdits[c.id]={amount:c.amount,paid:c.paid,paidBy:c.paidBy,split:c.split?c.split.slice():null};
+              state.fixedCostEdits[c.id]={amount:c.amount,paid:c.paid,paidBy:c.paidBy,split:(c.split||[0,1,2,3]).slice()};
               state.editingFixedId=null;setState({});debouncedSync()}},"✓ 儲存")
         ));
       }else{
