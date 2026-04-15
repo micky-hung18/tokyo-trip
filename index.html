@@ -32,7 +32,7 @@ input::placeholder{color:#ccc}
 .tab-btn .label{font-size:9px;font-weight:500;color:#999}
 .tab-btn.active .label{font-weight:700;color:#E8927C}
 .content{padding:16px 20px 40px}
-.day-selector{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;margin-bottom:8px}
+.day-selector{display:flex;gap:4px;overflow-x:auto;padding:2px 2px 12px 2px;margin-bottom:8px}
 .day-btn{border:none;cursor:pointer;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border-radius:14px;min-width:56px;flex-shrink:0;outline:2px solid transparent}
 .day-btn.active{outline-width:2px;outline-style:solid}
 .day-header{border-radius:16px;padding:16px 18px;margin-bottom:6px}
@@ -54,7 +54,7 @@ input::placeholder{color:#ccc}
 .event-desc{font-size:12px;color:#888;line-height:1.5}
 .suggest-note{margin-top:16px;padding:12px 16px;background:#FFF8E1;border-radius:12px;font-size:12px;color:#8D6E00;line-height:1.6;border-left:3px solid #F2C46D}
 /* Spot cards */
-.spot-card{border:1px solid #eee;background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:block}
+.spot-card{border:1px solid #e8e8e8;background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:block;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
 .spot-card:active{transform:scale(0.98)}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center}
@@ -69,7 +69,7 @@ input::placeholder{color:#ccc}
 .flight-card{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px 24px;color:#fff;position:relative;overflow:hidden}
 .flight-card::after{content:'';position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(232,146,124,0.15) 0%,transparent 70%)}
 /* Shopping */
-.member-selector{display:flex;gap:8px;margin-bottom:16px}
+.member-selector{display:flex;gap:8px;margin-bottom:16px;padding:2px}
 .member-btn{flex:1;border:none;cursor:pointer;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;outline:1px solid #eee}
 .member-btn.active{outline-width:2px;outline-style:solid}
 .shop-input-row{display:flex;gap:8px;margin-bottom:12px}
@@ -85,15 +85,19 @@ input::placeholder{color:#ccc}
 .empty-state{text-align:center;padding:40px 20px;color:#ccc}
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* Hotel */
-.hotel-card{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid #eee;position:relative;overflow:hidden;margin-bottom:12px}
-.hotel-card .bar{position:absolute;top:0;left:0;width:4px;height:100%}
+.hotel-card{background:#fff;border-radius:14px;padding:18px 20px 18px 24px;border:1px solid #eee;position:relative;overflow:hidden;margin-bottom:12px}
+.hotel-card .bar{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px}
 /* Costs */
-.cost-cards{display:flex;gap:12px;margin-bottom:20px}
+.cost-cards{display:flex;gap:12px;margin-bottom:20px;overflow:hidden}
 .cost-card{flex:1;border-radius:14px;padding:18px 16px;color:#fff}
-.cost-item{display:flex;align-items:center;padding:12px 16px;border-radius:12px;margin-bottom:8px}
+.cost-item{display:flex;align-items:center;padding:12px 16px;border-radius:12px;margin-bottom:8px;background:#fff;border:1px solid #f0f0f0}
+.cost-input-row{display:flex;gap:8px;margin-bottom:12px}
+.cost-input{flex:1;padding:10px 14px;border-radius:12px;border:2px solid #eee;font-size:13px;outline:none;background:#fff;font-family:inherit}
+.cost-input:focus{border-color:#E8927C}
+.cost-add-btn{padding:0 16px;border-radius:12px;border:none;cursor:pointer;color:#fff;font-weight:700;font-size:14px;background:#E8927C;white-space:nowrap}
 
 @keyframes spin{to{transform:rotate(360deg)}}
-.sync-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:8px 14px;margin-bottom:14px;border:1px solid #eee}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:8px 14px;margin-bottom:14px;border:1px solid #e8e8e8;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
 .sync-status{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
 .sync-dot{width:8px;height:8px;border-radius:50%}
 .sync-btn{border:none;cursor:pointer;background:none;font-size:12px;font-weight:600;color:#5B8DEF;padding:4px 8px;border-radius:8px}
@@ -118,7 +122,10 @@ async function syncLoad() {
   try {
     const r = await fetch(API_URL);
     const d = await r.json();
-    if (d && typeof d === 'object') { state.shopLists = d; saveShopLists(); state.syncStatus = 'synced'; state.lastSync = new Date(); }
+    if (d && typeof d === 'object') { 
+      if(d.shopLists) { state.shopLists = d.shopLists; state.extraCosts = d.extraCosts || []; } 
+      else { state.shopLists = d; } 
+      saveShopLists(); state.syncStatus = 'synced'; state.lastSync = new Date(); }
   } catch(e) { console.error(e); loadShopLists(); state.syncStatus = 'offline'; }
   render();
 }
@@ -128,7 +135,7 @@ async function syncSave() {
   if (!hasApi) return;
   state.syncStatus = 'saving'; render();
   try {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(state.shopLists), mode: 'no-cors' });
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({shopLists:state.shopLists,extraCosts:state.extraCosts}), mode: 'no-cors' });
     state.syncStatus = 'synced'; state.lastSync = new Date();
   } catch(e) { console.error(e); state.syncStatus = 'offline'; }
   render();
@@ -143,15 +150,16 @@ const COSTS=[{item:"河口湖住宿",amount:9905,yen:"49,400日圓",paid:false},
 const FLIGHTS={departure:{code:"CI220",from:"09:00",to:"13:10",fromCity:"桃園 TPE",toCity:"羽田 HND"},arrival:{code:"CI221",from:"14:30",to:"16:55",fromCity:"羽田 HND",toCity:"桃園 TPE"}};
 const TAG_COLORS={"交通":"#5B8DEF","抵達":"#5B8DEF","租車":"#5B8DEF","自駕":"#5B8DEF","美食":"#E8927C","咖啡":"#C4956A","景點":"#8BC89B","散步":"#8BC89B","住宿":"#D4A0D9","退房":"#D4A0D9","溫泉":"#E8B87C","體驗":"#E8B87C","購物":"#F2C46D","美術館":"#B89CE8","展望台":"#5B8DEF","精釀":"#C4956A"};
 const SPOTS={
+fujiyoshida_nishi:{name:"富士吉田西旅館",nameJp:"富士吉田西旅館",address:"山梨県富士吉田市松山1205",lat:35.489,lng:138.795,mapCode:"161 214 334*05",hours:"入住15:00 / 退房10:00",desc:"Day 1 河口湖住宿",forWho:"全家",transport:"driving"},
 toyota_rent:{name:"Toyota 租車 羽田機場店",nameJp:"トヨタレンタカー 羽田空港（国際線）店",address:"東京都大田区羽田1-15-11",lat:35.550216,lng:139.741062,placeId:"ChIJ7-2E67JhGGARvjx3fHsL74w",hours:"08:00–20:00",rating:4.0,reviews:107,desc:"位於羽田機場國際航廈附近，有免費接駁巴士往返航廈。取車後沿中央自動車道前往河口湖約2小時。",tips:"接駁巴士約每20–30分鐘一班。到3樓櫃檯登記再到1樓搭接駁車。",phone:"+81 3-5737-8100",forWho:"全家",transport:"driving"},
-dangozaka_sa:{name:"談合坂服務區",nameJp:"談合坂サービスエリア",address:"山梨県上野原市大野4943",lat:35.628302,lng:139.047036,placeId:"ChIJ21NeqsM_GWARKp719uWSi2k",hours:"24小時",rating:3.8,reviews:15075,desc:"中央自動車道上最大服務區，有美食廣場、星巴克、農產品市場。",tips:"推薦麻婆豆腐和當地水果。",phone:"+81 554-66-3734",forWho:"全家",transport:"driving"},
-fujiyama_onsen:{name:"Fujiyama 溫泉",nameJp:"ふじやま温泉",address:"山梨県富士吉田市新西原4-17-1",lat:35.483488,lng:138.779455,placeId:"ChIJW9hrJ8BgGWARkijUaC7BdcE",hours:"06:30–09:00, 10:00–23:00",rating:4.1,reviews:3486,desc:"純木造天然溫泉，有室內和露天風呂。陽台可眺望富士山。",tips:"平日¥1,600、週末¥2,000。自備毛巾可省錢。",phone:"+81 555-22-1126",forWho:"全家",transport:"driving"},
-arakurayama:{name:"新倉山淺間公園",nameJp:"新倉山浅間公園",address:"山梨県富士吉田市浅間2-4-1",lat:35.501391,lng:138.801631,placeId:"ChIJu6hYHU1nGWARfaBH0X127o8",hours:"24小時開放",rating:4.6,reviews:9706,desc:"日本最經典富士山拍攝景點！忠靈塔五重塔搭配富士山。需攀登約400階。",tips:"建議清晨前來。四月正值櫻花季。有緩坡步道可選。",phone:"+81 555-21-1000",forWho:"全家",transport:"driving"},
+dangozaka_sa:{mapCode:"348 173 451*56",name:"談合坂服務區",nameJp:"談合坂サービスエリア",address:"山梨県上野原市大野4943",lat:35.628302,lng:139.047036,placeId:"ChIJ21NeqsM_GWARKp719uWSi2k",hours:"24小時",rating:3.8,reviews:15075,desc:"中央自動車道上最大服務區，有美食廣場、星巴克、農產品市場。",tips:"推薦麻婆豆腐和當地水果。",phone:"+81 554-66-3734",forWho:"全家",transport:"driving"},
+fujiyama_onsen:{mapCode:"161 213 567*32",name:"Fujiyama 溫泉",nameJp:"ふじやま温泉",address:"山梨県富士吉田市新西原4-17-1",lat:35.483488,lng:138.779455,placeId:"ChIJW9hrJ8BgGWARkijUaC7BdcE",hours:"06:30–09:00, 10:00–23:00",rating:4.1,reviews:3486,desc:"純木造天然溫泉，有室內和露天風呂。陽台可眺望富士山。",tips:"平日¥1,600、週末¥2,000。自備毛巾可省錢。",phone:"+81 555-22-1126",forWho:"全家",transport:"driving"},
+arakurayama:{mapCode:"161 276 707*86",name:"新倉山淺間公園",nameJp:"新倉山浅間公園",address:"山梨県富士吉田市浅間2-4-1",lat:35.501391,lng:138.801631,placeId:"ChIJu6hYHU1nGWARfaBH0X127o8",hours:"24小時開放",rating:4.6,reviews:9706,desc:"日本最經典富士山拍攝景點！忠靈塔五重塔搭配富士山。需攀登約400階。",tips:"建議清晨前來。四月正值櫻花季。有緩坡步道可選。",phone:"+81 555-21-1000",forWho:"全家",transport:"driving"},
 kawaguchiko_sta:{name:"河口湖車站",nameJp:"河口湖駅",address:"山梨県南都留郡富士河口湖町船津",lat:35.498236,lng:138.768841,placeId:"ChIJMSQyt4JgGWARGxEj8inq2wc",hours:"車站全天",rating:4.1,reviews:131,desc:"河口湖交通中心，有觀光案內所和伴手禮商店。",forWho:"全家",transport:"driving"},
-ide_brewery:{name:"井出醸造店",nameJp:"井出醸造店",address:"山梨県南都留郡富士河口湖町船津8",lat:35.502065,lng:138.765601,placeId:"ChIJK4jkNSleGWARTc3G7kw2oBw",hours:"09:00–12:00, 13:00–17:00",rating:4.6,reviews:380,desc:"河口湖清酒釀造廠。¥850試飲5種清酒。有現場限定未殺菌生酒！",tips:"可預約導覽。推薦買酒粕麵包、清酒冰淇淋。",phone:"+81 555-72-0006",forWho:"爸媽最愛",buyWhat:"清酒、酒粕麵包、清酒冰淇淋、限定生酒",transport:"driving"},
-ubuya:{name:"UBUYA",nameJp:"うぶや",address:"山梨県南都留郡富士河口湖町浅川10",lat:35.512822,lng:138.768906,placeId:"ChIJK4evUjdeGWARU3gkvo_nU_4",hours:"入住15:00 / 退房11:00",rating:4.4,reviews:1714,desc:"河口湖畔頂級溫泉旅館，每間房正面眺望富士山。",tips:"有免費接駁車。入住後享下午茶。",phone:"+81 555-72-1145",forWho:"全家",transport:"driving"},
-oishi_park:{name:"大石公園",nameJp:"大石公園",address:"山梨県南都留郡富士河口湖町大石2525-11先",lat:35.522904,lng:138.745752,placeId:"ChIJlSsLjKZfGWARBCllOgtTLqI",hours:"24小時開放",rating:4.4,reviews:21592,desc:"河口湖北岸美麗公園，四月有鬱金香。免費入場。",tips:"免費停車場。花園平台咖啡廳推薦。",phone:"+81 555-76-8230",forWho:"全家",transport:"driving"},
-via_inn:{name:"Via Inn Prime 日本橋人形町",nameJp:"ヴィアイン プライム日本橋人形町",address:"東京都中央区日本橋小網町16-12",lat:35.685108,lng:139.780118,placeId:"ChIJhYnfZxeJGGARxaoRQQNtDkY",hours:"24小時",rating:4.3,reviews:785,desc:"日本橋人形町商務飯店，房間寬敞。距地鐵站步行5分鐘。",tips:"有投幣洗衣機。附近很多美食老店。",phone:"+81 3-5640-5489",forWho:"全家"},
+ide_brewery:{mapCode:"161 272 757*36",name:"井出醸造店",nameJp:"井出醸造店",address:"山梨県南都留郡富士河口湖町船津8",lat:35.502065,lng:138.765601,placeId:"ChIJK4jkNSleGWARTc3G7kw2oBw",hours:"09:00–12:00, 13:00–17:00",rating:4.6,reviews:380,desc:"河口湖清酒釀造廠。¥850試飲5種清酒。有現場限定未殺菌生酒！",tips:"可預約導覽。推薦買酒粕麵包、清酒冰淇淋。",phone:"+81 555-72-0006",forWho:"爸媽最愛",buyWhat:"清酒、酒粕麵包、清酒冰淇淋、限定生酒",transport:"driving"},
+ubuya:{mapCode:"161 332 139*08",name:"UBUYA",nameJp:"うぶや",address:"山梨県南都留郡富士河口湖町浅川10",lat:35.512822,lng:138.768906,placeId:"ChIJK4evUjdeGWARU3gkvo_nU_4",hours:"入住15:00 / 退房11:00",rating:4.4,reviews:1714,desc:"河口湖畔頂級溫泉旅館，每間房正面眺望富士山。",tips:"有免費接駁車。入住後享下午茶。",phone:"+81 555-72-1145",forWho:"全家",transport:"driving"},
+oishi_park:{mapCode:"59 089 326*28",name:"大石公園",nameJp:"大石公園",address:"山梨県南都留郡富士河口湖町大石2525-11先",lat:35.522904,lng:138.745752,placeId:"ChIJlSsLjKZfGWARBCllOgtTLqI",hours:"24小時開放",rating:4.4,reviews:21592,desc:"河口湖北岸美麗公園，四月有鬱金香。免費入場。",tips:"免費停車場。花園平台咖啡廳推薦。",phone:"+81 555-76-8230",forWho:"全家",transport:"driving"},
+via_inn:{mapCode:"649 720*25",name:"Via Inn Prime 日本橋人形町",nameJp:"ヴィアイン プライム日本橋人形町",address:"東京都中央区日本橋小網町16-12",lat:35.685108,lng:139.780118,placeId:"ChIJhYnfZxeJGGARxaoRQQNtDkY",hours:"24小時",rating:4.3,reviews:785,desc:"日本橋人形町商務飯店，房間寬敞。距地鐵站步行5分鐘。",tips:"有投幣洗衣機。附近很多美食老店。",phone:"+81 3-5640-5489",forWho:"全家"},
 imperial_palace:{name:"皇居",nameJp:"皇居",address:"東京都千代田区千代田1-1",lat:35.685175,lng:139.752799,placeId:"ChIJTQbYAg2MGGARt22eNwtfGtE",hours:"東御苑：09:00–16:30（週一五休）",rating:4.4,reviews:30453,desc:"日本天皇居所，東御苑免費開放。二重橋是經典地標。",tips:"4/19是週六有開放！建議1–1.5小時。",phone:"+81 3-3213-1111",forWho:"全家（爸媽特別喜歡）"},
 bongen_coffee:{name:"BONGEN COFFEE",nameJp:"BONGEN COFFEE 日本橋店",address:"東京都中央区京橋1-19-4",lat:35.676833,lng:139.773757,placeId:"ChIJ8WsLrN-JGGAR5e_DmVwDirI",hours:"10:00–17:00（週三休）",rating:4.2,reviews:210,desc:"超人氣精品咖啡店，極簡日式風格。招牌拿鐵含三份濃縮。",tips:"建議開門前30–45分鐘排隊。座位僅約10個。",phone:"+81 3-5915-4841",forWho:"年輕人最愛",buyWhat:"咖啡豆伴手禮"},
 artizon:{name:"ARTIZON MUSEUM",nameJp:"アーティゾン美術館",address:"東京都中央区京橋1-7-2",lat:35.678763,lng:139.771892,placeId:"ChIJOzAxseKLGGARWxBlxNWWRPs",hours:"10:00–18:00（五至20:00，一休）",rating:4.5,reviews:2893,desc:"石橋財團美術館，正舉辦莫內特展！學生免費。",tips:"線上預約較便宜。莫內展很熱門要提前到。",phone:"+81 50-5541-8600",forWho:"全家",buyWhat:"莫內周邊、明信片、藝術書籍"},
@@ -167,7 +175,7 @@ const DAYS=[
 {time:"13:10",title:"抵達羽田機場",icon:"🛬",tag:"抵達"},
 {time:"14:30",title:"領取租車",desc:"Toyota 羽田機場國際航線店",icon:"🚗",tag:"租車",spotId:"toyota_rent"},
 {time:"15:30",title:"出發前往河口湖",desc:"途經談合坂服務區休息",icon:"🛣️",tag:"自駕",spotId:"dangozaka_sa"},
-{time:"17:30",title:"下吉田吃飯 + 入住飯店",desc:"富士吉田地區",icon:"🍜",tag:"美食"},
+{time:"17:30",title:"下吉田吃飯 + 入住飯店",desc:"富士吉田西旅館",icon:"🍜",tag:"美食",spotId:"fujiyoshida_nishi"},
 {time:"21:00",title:"Fujiyama 溫泉",icon:"♨️",tag:"溫泉",spotId:"fujiyama_onsen"}]},
 {day:2,date:"04/16",weekday:"三",title:"富士山一日遊",region:"下吉田 → 河口湖 → UBUYA",color:"#7CB5E8",icon:"🗻",isDriving:true,events:[
 {time:"07:00",title:"早餐：麥當勞",icon:"🍔",tag:"美食"},
@@ -206,14 +214,14 @@ const DAYS=[
 {time:"11:00",title:"出發往羽田機場",icon:"🚃",tag:"交通"},
 {time:"14:30",title:"回程航班 CI221",desc:"16:55 抵達桃園",icon:"✈️",tag:"交通"}]}
 ];
-const HOTELS=[{dates:"4/15",name:"河口湖住宿（飯店名待確認）",area:"富士吉田"},{dates:"4/16",name:"UBUYA",area:"河口湖",spotId:"ubuya"},{dates:"4/17–4/19",name:"Via Inn Prime 日本橋人形町",area:"東京・日本橋",spotId:"via_inn"}];
+const HOTELS=[{dates:"4/15",name:"富士吉田西旅館",area:"富士吉田",spotId:"fujiyoshida_nishi"},{dates:"4/16",name:"UBUYA",area:"河口湖",spotId:"ubuya"},{dates:"4/17–4/19",name:"Via Inn Prime 日本橋人形町",area:"東京・日本橋",spotId:"via_inn"}];
 const SUGGESTED_ITEMS={0:["藥妝","面膜","零食伴手禮","衣服"],1:["藥妝","零食","公仔/玩具","衣服"],2:["清酒","保健食品","電器","伴手禮"],3:["保養品","精品包","甜點伴手禮","廚房用品"]};
 
 // ─── STATE ───
-let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:""};
+let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:"",extraCosts:[],costItemInput:"",costAmountInput:""};
 
-function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d)}catch(e){}}
-function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists))}catch(e){}}
+function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d);const c=localStorage.getItem("tokyo-trip-costs");if(c)state.extraCosts=JSON.parse(c)}catch(e){}}
+function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists));localStorage.setItem("tokyo-trip-costs",JSON.stringify(state.extraCosts))}catch(e){}}
 if(hasApi){syncLoad()}else{loadShopLists();}
 
 function setState(updates){Object.assign(state,updates);render()}
@@ -251,7 +259,8 @@ function renderSpotModal(spot){
           h("div",{style:{display:"flex",flexDirection:"column",gap:"10px"}},
             h("div",{style:{display:"flex",gap:"10px"}},"📍 ",h("span",{style:{fontSize:"13px",color:"#666"}},spot.address)),
             spot.hours?h("div",{style:{display:"flex",gap:"10px"}},"🕐 ",h("span",{style:{fontSize:"13px",color:"#666"}},spot.hours)):null,
-            spot.phone?h("div",{style:{display:"flex",gap:"10px"}},"📞 ",h("a",{href:`tel:${spot.phone}`,style:{fontSize:"13px",color:"#5B8DEF",textDecoration:"none"}},spot.phone)):null
+            spot.phone?h("div",{style:{display:"flex",gap:"10px"}},"📞 ",h("a",{href:`tel:${spot.phone}`,style:{fontSize:"13px",color:"#5B8DEF",textDecoration:"none"}},spot.phone)):null,
+            spot.mapCode?h("div",{style:{display:"flex",gap:"10px"}},"🗺️ ",h("span",{style:{fontSize:"13px",color:"#666",fontWeight:600}},"Map Code: "+spot.mapCode)):null
           )
         ),
         spot.tips?h("div",{className:"tip-box",style:{background:"linear-gradient(135deg,#FFF8E1,#FFF3E0)",borderLeftColor:"#F2C46D"}},
@@ -272,7 +281,8 @@ function render(){
   app.innerHTML="";
   const{tab:ct,activeDay,checkedItems,selectedSpot,activeMember,shopLists,shopInput}=state;
   const currentDay=DAYS[activeDay];
-  const total=COSTS.reduce((s,c)=>s+c.amount,0);
+  const extraTotal=state.extraCosts.reduce((s,c)=>s+c.amount,0);
+  const total=COSTS.reduce((s,c)=>s+c.amount,0)+extraTotal;
   const perPerson=Math.round(total/4);
 
   // Header
@@ -325,7 +335,7 @@ function render(){
           h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},h("div",{style:{fontSize:"14px",fontWeight:700,flex:1}},sp.name),sp.rating?h("span",{style:{fontSize:"11px",color:"#E8927C",fontWeight:700,flexShrink:0,marginLeft:"8px"}},"⭐ "+sp.rating):null),
           sp.nameJp?h("div",{style:{fontSize:"11px",color:"#bbb",marginBottom:"6px"}},sp.nameJp):null,
           h("div",{style:{fontSize:"12px",color:"#888",lineHeight:"1.5",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}},sp.desc),
-          h("div",{style:{display:"flex",gap:"6px",marginTop:"8px",flexWrap:"wrap"}},sp.forWho?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E8F5E9",color:"#4CAF50",fontWeight:600}},"👥 "+sp.forWho):null,sp.transport==="driving"?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E3F2FD",color:"#2196F3",fontWeight:600}},"🚗"):null,sp.buyWhat?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#F3E5F5",color:"#9C27B0",fontWeight:600}},"🛒"):null)
+          h("div",{style:{display:"flex",gap:"6px",marginTop:"8px",flexWrap:"wrap"}},sp.forWho?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E8F5E9",color:"#4CAF50",fontWeight:600}},"👥 "+sp.forWho):null,sp.transport==="driving"?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E3F2FD",color:"#2196F3",fontWeight:600}},"🚗"):null,sp.buyWhat?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#F3E5F5",color:"#9C27B0",fontWeight:600}},"🛒"):null,sp.mapCode?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#FFF3E0",color:"#E65100",fontWeight:600}},"🗺️ "+sp.mapCode):null)
         ));
       });
     });
@@ -409,8 +419,23 @@ function render(){
   // ── COSTS ──
   if(ct==="costs"){
     content.append(h("div",{className:"cost-cards"},h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#E8927C,#d4765e)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"總費用"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+total.toLocaleString())),h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#7CB5E8,#5a9ad5)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"每人平均"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+perPerson.toLocaleString()))));
-    COSTS.forEach(c=>{content.append(h("div",{className:"cost-item",style:{background:c.paid?"rgba(139,200,155,0.08)":"rgba(232,146,124,0.08)",borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.yen?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.yen):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("div",{style:{fontSize:"10px",padding:"3px 8px",borderRadius:"20px",fontWeight:600,background:c.paid?"#8BC89B":"#E8927C",color:"#fff"}},c.paid?"已付":"未付")))});
-    content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #eee"}},h("div",{style:{fontWeight:700,fontSize:"14px",marginBottom:"12px"}},"每人分擔"),h("div",{className:"summary-grid"},...MEMBERS.map(m=>h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"10px 14px",borderRadius:"12px",background:m.color+"10"}},h("span",{style:{fontSize:"22px"}},m.emoji),h("div",null,h("div",{style:{fontSize:"12px",fontWeight:600,color:m.color}},m.name),h("div",{style:{fontSize:"14px",fontWeight:800}},"NT$ "+perPerson.toLocaleString())))))));
+    // Pre-trip fixed costs
+    content.append(h("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"8px",color:"#2a2a3e"}},"行前固定費用"));
+    COSTS.forEach(c=>{content.append(h("div",{className:"cost-item",style:{borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.yen?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.yen):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("div",{style:{fontSize:"10px",padding:"3px 8px",borderRadius:"20px",fontWeight:600,background:c.paid?"#8BC89B":"#E8927C",color:"#fff"}},c.paid?"已付":"未付")))});
+    // Extra costs section
+    content.append(h("div",{style:{fontSize:"13px",fontWeight:700,margin:"20px 0 8px",color:"#2a2a3e",display:"flex",justifyContent:"space-between",alignItems:"center"}},h("span",null,"旅途額外花費"),extraTotal>0?h("span",{style:{fontSize:"12px",color:"#E8927C",fontWeight:600}},"小計 NT$ "+extraTotal.toLocaleString()):null));
+    // Add cost input
+    const costNameInp=h("input",{className:"cost-input",placeholder:"項目名稱",value:state.costItemInput,style:{flex:2},onInput:e=>state.costItemInput=e.target.value});
+    const costAmtInp=h("input",{className:"cost-input",placeholder:"NT$",value:state.costAmountInput,inputMode:"numeric",style:{flex:1,textAlign:"right"},onInput:e=>state.costAmountInput=e.target.value,onKeyDown:e=>{if(e.key==="Enter")addExtraCost()}});
+    content.append(h("div",{className:"cost-input-row"},costNameInp,costAmtInp,h("button",{className:"cost-add-btn",onClick:addExtraCost},"+") ));
+    // Extra cost items
+    if(state.extraCosts.length===0){
+      content.append(h("div",{style:{textAlign:"center",padding:"16px",color:"#ccc",fontSize:"12px"}},"還沒有額外花費，旅途中隨時記錄！"));
+    }else{
+      state.extraCosts.forEach(c=>{content.append(h("div",{className:"cost-item",style:{borderLeft:"3px solid #F2C46D"}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.date?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.date):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("button",{className:"del-btn",onClick:()=>deleteExtraCost(c.id)},"×")))});
+    }
+    // Per person
+    content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #e8e8e8",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}},h("div",{style:{fontWeight:700,fontSize:"14px",marginBottom:"12px"}},"每人分擔"),h("div",{className:"summary-grid"},...MEMBERS.map(m=>h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"10px 14px",borderRadius:"12px",background:m.color+"10"}},h("span",{style:{fontSize:"22px"}},m.emoji),h("div",null,h("div",{style:{fontSize:"12px",fontWeight:600,color:m.color}},m.name),h("div",{style:{fontSize:"14px",fontWeight:800}},"NT$ "+perPerson.toLocaleString())))))));
   }
 
   app.append(content);
@@ -444,6 +469,21 @@ function clearCheckedItems(){
   nl[state.activeMember]=nl[state.activeMember].filter(i=>!i.checked);
   setState({shopLists:nl});
   debouncedSync();
+}
+
+function addExtraCost(){
+  const item=state.costItemInput.trim();
+  const amount=parseInt(state.costAmountInput);
+  if(!item||!amount||isNaN(amount))return;
+  const today=new Date();
+  const dateStr=(today.getMonth()+1)+"/"+today.getDate();
+  state.extraCosts=[...state.extraCosts,{item,amount,date:dateStr,id:Date.now()}];
+  state.costItemInput="";state.costAmountInput="";
+  setState({});debouncedSync();
+}
+function deleteExtraCost(id){
+  state.extraCosts=state.extraCosts.filter(c=>c.id!==id);
+  setState({});debouncedSync();
 }
 
 render();
