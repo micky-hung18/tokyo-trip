@@ -91,11 +91,52 @@ input::placeholder{color:#ccc}
 .cost-cards{display:flex;gap:12px;margin-bottom:20px}
 .cost-card{flex:1;border-radius:14px;padding:18px 16px;color:#fff}
 .cost-item{display:flex;align-items:center;padding:12px 16px;border-radius:12px;margin-bottom:8px}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:8px 14px;margin-bottom:14px;border:1px solid #eee}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+.sync-dot{width:8px;height:8px;border-radius:50%}
+.sync-btn{border:none;cursor:pointer;background:none;font-size:12px;font-weight:600;color:#5B8DEF;padding:4px 8px;border-radius:8px}
+.sync-btn:active{background:#E3F2FD}
+.sync-spinner{width:14px;height:14px;border:2px solid #eee;border-top-color:#5B8DEF;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
+
+// ========================================
+// ⚠️ 請把下面這行換成你的 Apps Script 網址
+// ========================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzEEdQg5d43YTJidVsxPEDCNeubBj3inRkdtWBLUiNRe43drLL3_MomkNIBH2K_ganp/exec';
+// ========================================
+const hasApi = API_URL && !API_URL.includes('__APPS_SCRIPT');
+
+async function syncLoad() {
+  if (!hasApi) { loadShopLists(); return; }
+  state.syncStatus = 'loading'; render();
+  try {
+    const r = await fetch(API_URL);
+    const d = await r.json();
+    if (d && typeof d === 'object') { state.shopLists = d; saveShopLists(); state.syncStatus = 'synced'; state.lastSync = new Date(); }
+  } catch(e) { console.error(e); loadShopLists(); state.syncStatus = 'offline'; }
+  render();
+}
+
+async function syncSave() {
+  saveShopLists();
+  if (!hasApi) return;
+  state.syncStatus = 'saving'; render();
+  try {
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(state.shopLists), mode: 'no-cors' });
+    state.syncStatus = 'synced'; state.lastSync = new Date();
+  } catch(e) { console.error(e); state.syncStatus = 'offline'; }
+  render();
+}
+
+let _saveTimer = null;
+function debouncedSync() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => syncSave(), 800); }
+
 // ─── DATA ───
 const MEMBERS=[{name:"我",emoji:"🧑",color:"#E8927C"},{name:"Agoo",emoji:"👦",color:"#7CB5E8"},{name:"爸爸",emoji:"👨",color:"#8BC89B"},{name:"媽媽",emoji:"👩",color:"#D4A0D9"}];
 const COSTS=[{item:"河口湖住宿",amount:9905,yen:"49,400日圓",paid:false},{item:"東京住宿(3晚)",amount:31494,yen:"157,083日圓",paid:false},{item:"UBUYA住宿",amount:33814,yen:"",paid:true},{item:"機票",amount:65904,yen:"",paid:true},{item:"租車",amount:14795,yen:"",paid:true},{item:"美術館門票",amount:1675,yen:"",paid:true}];
@@ -169,11 +210,11 @@ const HOTELS=[{dates:"4/15",name:"河口湖住宿（飯店名待確認）",area:
 const SUGGESTED_ITEMS={0:["藥妝","面膜","零食伴手禮","衣服"],1:["藥妝","零食","公仔/玩具","衣服"],2:["清酒","保健食品","電器","伴手禮"],3:["保養品","精品包","甜點伴手禮","廚房用品"]};
 
 // ─── STATE ───
-let state={tab:"itinerary",activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:""};
+let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:""};
 
 function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d)}catch(e){}}
 function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists))}catch(e){}}
-loadShopLists();
+if(hasApi){syncLoad()}else{loadShopLists();}
 
 function setState(updates){Object.assign(state,updates);render()}
 
@@ -295,6 +336,18 @@ function render(){
     const m=MEMBERS[activeMember];
     const myList=shopLists[activeMember]||[];
     const checkedCount=myList.filter(i=>i.checked).length;
+
+    // Sync bar
+    const syncColor=state.syncStatus==="synced"?"#8BC89B":state.syncStatus==="offline"?"#E8927C":"#F2C46D";
+    const syncLabel=state.syncStatus==="synced"?"已同步":state.syncStatus==="offline"?"離線模式":state.syncStatus==="loading"?"載入中...":state.syncStatus==="saving"?"儲存中...":hasApi?"待同步":"本地模式";
+    content.append(h("div",{className:"sync-bar"},
+      h("div",{className:"sync-status"},
+        state.syncStatus==="loading"||state.syncStatus==="saving"?h("span",{className:"sync-spinner"}):h("div",{className:"sync-dot",style:{background:syncColor}}),
+        h("span",{style:{color:syncColor}},syncLabel),
+        state.lastSync?h("span",{style:{color:"#ccc",fontSize:"10px"}},state.lastSync.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})):null
+      ),
+      hasApi?h("button",{className:"sync-btn",onClick:()=>syncLoad()},"🔄 重新整理"):h("span",{style:{fontSize:"10px",color:"#ccc"}},"未設定同步")
+    ));
     // Member selector
     content.append(h("div",{className:"member-selector"},...MEMBERS.map((mem,i)=>{
       const cnt=(shopLists[i]||[]).length;
@@ -308,7 +361,7 @@ function render(){
     if(myList.length<3){
       content.append(h("div",null,h("div",{style:{fontSize:"11px",color:"#999",marginBottom:"6px",fontWeight:600}},"快速新增："),h("div",{className:"quick-tags"},...SUGGESTED_ITEMS[activeMember].map(s=>{
         const has=myList.some(x=>x.text===s);
-        return h("button",{className:"quick-tag",style:{borderColor:m.color+"30",background:has?m.color+"15":"#fff",color:has?m.color:"#888"},onClick:()=>{if(!has){const nl={...shopLists};nl[activeMember]=[...myList,{text:s,checked:false,id:Date.now()+Math.random()}];setState({shopLists:nl});saveShopLists()}}},`${has?"✓ ":"+ "}${s}`);
+        return h("button",{className:"quick-tag",style:{borderColor:m.color+"30",background:has?m.color+"15":"#fff",color:has?m.color:"#888"},onClick:()=>{if(!has){const nl={...shopLists};nl[activeMember]=[...myList,{text:s,checked:false,id:Date.now()+Math.random()}];setState({shopLists:nl});debouncedSync()}}},`${has?"✓ ":"+ "}${s}`);
       }))));
     }
     // List
@@ -372,25 +425,25 @@ function addShopItem(){
   nl[state.activeMember]=[...nl[state.activeMember],{text,checked:false,id:Date.now()}];
   state.shopInput="";
   setState({shopLists:nl});
-  saveShopLists();
+  debouncedSync();
 }
 function toggleShopItem(id){
   const nl={...state.shopLists};
   nl[state.activeMember]=nl[state.activeMember].map(i=>i.id===id?{...i,checked:!i.checked}:i);
   setState({shopLists:nl});
-  saveShopLists();
+  debouncedSync();
 }
 function deleteShopItem(id){
   const nl={...state.shopLists};
   nl[state.activeMember]=nl[state.activeMember].filter(i=>i.id!==id);
   setState({shopLists:nl});
-  saveShopLists();
+  debouncedSync();
 }
 function clearCheckedItems(){
   const nl={...state.shopLists};
   nl[state.activeMember]=nl[state.activeMember].filter(i=>!i.checked);
   setState({shopLists:nl});
-  saveShopLists();
+  debouncedSync();
 }
 
 render();
