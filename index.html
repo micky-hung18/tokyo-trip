@@ -146,7 +146,7 @@ function debouncedSync() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() 
 
 // ─── DATA ───
 const MEMBERS=[{name:"我",emoji:"🧑",color:"#E8927C"},{name:"Agoo",emoji:"👦",color:"#7CB5E8"},{name:"爸爸",emoji:"👨",color:"#8BC89B"},{name:"媽媽",emoji:"👩",color:"#D4A0D9"}];
-const COSTS=[{id:1,item:"河口湖住宿",amount:9905,yen:"49,400日圓",paid:false,paidBy:0,split:[0,1,2,3]},{id:2,item:"東京住宿(3晚)",amount:31494,yen:"157,083日圓",paid:false,paidBy:0,split:[0,1,2,3]},{id:3,item:"UBUYA住宿",amount:33814,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:4,item:"機票",amount:65904,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:5,item:"租車",amount:14795,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:6,item:"美術館門票",amount:1675,yen:"",paid:true,paidBy:0,split:[0,1,2,3]}];
+const COSTS_ORIG=[{id:1,item:"河口湖住宿",amount:9905,yen:"49,400日圓",paid:false,paidBy:0,split:[0,1,2,3]},{id:2,item:"東京住宿(3晚)",amount:31494,yen:"157,083日圓",paid:false,paidBy:0,split:[0,1,2,3]},{id:3,item:"UBUYA住宿",amount:33814,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:4,item:"機票",amount:65904,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:5,item:"租車",amount:14795,yen:"",paid:true,paidBy:0,split:[0,1,2,3]},{id:6,item:"美術館門票",amount:1675,yen:"",paid:true,paidBy:0,split:[0,1,2,3]}];
 const FLIGHTS={departure:{code:"CI220",from:"09:00",to:"13:10",fromCity:"桃園 TPE",toCity:"羽田 HND"},arrival:{code:"CI221",from:"14:30",to:"16:55",fromCity:"羽田 HND",toCity:"桃園 TPE"}};
 const TAG_COLORS={"交通":"#5B8DEF","抵達":"#5B8DEF","租車":"#5B8DEF","自駕":"#5B8DEF","美食":"#E8927C","咖啡":"#C4956A","景點":"#8BC89B","散步":"#8BC89B","住宿":"#D4A0D9","退房":"#D4A0D9","溫泉":"#E8B87C","體驗":"#E8B87C","購物":"#F2C46D","美術館":"#B89CE8","展望台":"#5B8DEF","精釀":"#C4956A"};
 const SPOTS={
@@ -276,13 +276,18 @@ function renderSpotModal(spot){
   return overlay;
 }
 
+function getCosts(){
+  const fe=state.fixedCostEdits||{};
+  return COSTS_ORIG.map(orig=>{const c={...orig};if(fe[c.id]){const e=fe[c.id];if(e.amount!=null)c.amount=e.amount;if(e.paid!=null)c.paid=e.paid;if(e.paidBy!=null)c.paidBy=e.paidBy;if(e.split)c.split=e.split.slice()}return c});
+}
 function render(){
   const app=document.getElementById("app");
   app.innerHTML="";
   const{tab:ct,activeDay,checkedItems,selectedSpot,activeMember,shopLists,shopInput}=state;
   const currentDay=DAYS[activeDay];
+  const costsForTotal=getCosts();
   const extraTotal=state.extraCosts.reduce((s,c)=>s+c.amount,0);
-  const total=COSTS.reduce((s,c)=>s+c.amount,0)+extraTotal;
+  const total=costsForTotal.reduce((s,c)=>s+c.amount,0)+extraTotal;
   const perPerson=Math.round(total/4);
 
   // Header
@@ -419,11 +424,10 @@ function render(){
   // ── COSTS ──
   if(ct==="costs"){
     content.append(h("div",{className:"cost-cards"},h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#E8927C,#d4765e)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"總費用"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+total.toLocaleString())),h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#7CB5E8,#5a9ad5)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"每人平均"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+perPerson.toLocaleString()))));
-    // Pre-trip fixed costs - apply saved edits
-    const fe=state.fixedCostEdits||{};
-    COSTS.forEach(c=>{if(fe[c.id]){const e=fe[c.id];if(e.amount!=null)c.amount=e.amount;if(e.paid!=null)c.paid=e.paid;if(e.paidBy!=null)c.paidBy=e.paidBy;if(e.split)c.split=e.split.slice()}});
+    // Pre-trip fixed costs
+    const costsData=getCosts();
     content.append(h("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"8px",color:"#2a2a3e"}},"行前固定費用"));
-    COSTS.forEach(c=>{
+    costsData.forEach(c=>{
       const fp=MEMBERS[c.paidBy||0];
       const fSplitNames=(c.split||[0,1,2,3]).map(i=>MEMBERS[i].emoji).join("");
       const isEditF=state.editingFixedId===c.id;
@@ -434,23 +438,20 @@ function render(){
             h("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:"12px",color:"#999"},onClick:()=>{state.editingFixedId=null;render()}},"取消")),
           h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}},
               h("span",{style:{fontSize:"12px",color:"#999",fontWeight:600}},"金額 NT$"),
-              h("input",{className:"cost-input",value:c.amount.toString(),inputMode:"numeric",style:{flex:1,textAlign:"right",fontWeight:700,fontSize:"15px"},onInput:e=>{c.amount=parseInt(e.target.value)||0}}),
+              h("input",{className:"cost-input",value:c.amount.toString(),inputMode:"numeric",style:{flex:1,textAlign:"right",fontWeight:700,fontSize:"15px"},onInput:e=>{if(!state.fixedCostEdits)state.fixedCostEdits={};if(!state.fixedCostEdits[c.id])state.fixedCostEdits[c.id]={};state.fixedCostEdits[c.id].amount=parseInt(e.target.value)||0}}),
               c.yen?h("span",{style:{fontSize:"10px",color:"#bbb"}},"("+c.yen+")"):null),
           h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}},
             h("span",{style:{fontSize:"11px",color:"#999",fontWeight:600}},"狀態"),
-            h("button",{style:{padding:"4px 12px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:600,fontSize:"11px",background:c.paid?"#8BC89B":"#E8927C",color:"#fff",fontFamily:"inherit"},onClick:()=>{c.paid=!c.paid;render()}},c.paid?"已付 ✓":"未付")),
+            h("button",{style:{padding:"4px 12px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:600,fontSize:"11px",background:c.paid?"#8BC89B":"#E8927C",color:"#fff",fontFamily:"inherit"},onClick:()=>{if(!state.fixedCostEdits)state.fixedCostEdits={};if(!state.fixedCostEdits[c.id])state.fixedCostEdits[c.id]={};state.fixedCostEdits[c.id].paid=!c.paid;render()}},c.paid?"已付 ✓":"未付")),
           h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰墊付？"),
           h("div",{style:{display:"flex",gap:"4px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
             const sel=(c.paidBy||0)===i;
-            return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:sel?"2px solid "+mem.color:"1.5px solid #eee",background:sel?mem.color+"15":"#fff",cursor:"pointer",fontSize:"11px",fontWeight:sel?700:500,color:sel?mem.color:"#bbb",fontFamily:"inherit"},onClick:()=>{c.paidBy=i;render()}},mem.emoji)})),
+            return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:sel?"2px solid "+mem.color:"1.5px solid #eee",background:sel?mem.color+"15":"#fff",cursor:"pointer",fontSize:"11px",fontWeight:sel?700:500,color:sel?mem.color:"#bbb",fontFamily:"inherit"},onClick:()=>{if(!state.fixedCostEdits)state.fixedCostEdits={};if(!state.fixedCostEdits[c.id])state.fixedCostEdits[c.id]={};state.fixedCostEdits[c.id].paidBy=i;render()}},mem.emoji)})),
           h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰分攤？"),
           h("div",{style:{display:"flex",gap:"4px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
             const sp=c.split||[0,1,2,3];const inS=sp.includes(i);
-            return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:inS?"2px solid "+mem.color:"1.5px solid #eee",background:inS?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"11px",fontWeight:inS?700:500,color:inS?mem.color:"#ccc",fontFamily:"inherit",opacity:inS?1:0.5},onClick:()=>{if(!c.split)c.split=[0,1,2,3];if(inS&&c.split.length>1)c.split=c.split.filter(x=>x!==i);else if(!inS)c.split.push(i);render()}},mem.emoji+(inS?" ✓":""))})),
-          h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{
-              if(!state.fixedCostEdits)state.fixedCostEdits={};
-              state.fixedCostEdits[c.id]={amount:c.amount,paid:c.paid,paidBy:c.paidBy,split:(c.split||[0,1,2,3]).slice()};
-              state.editingFixedId=null;setState({});debouncedSync()}},"✓ 儲存")
+            return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:inS?"2px solid "+mem.color:"1.5px solid #eee",background:inS?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"11px",fontWeight:inS?700:500,color:inS?mem.color:"#ccc",fontFamily:"inherit",opacity:inS?1:0.5},onClick:()=>{if(!state.fixedCostEdits)state.fixedCostEdits={};if(!state.fixedCostEdits[c.id])state.fixedCostEdits[c.id]={};const curSp=(c.split||[0,1,2,3]).slice();if(inS&&curSp.length>1)state.fixedCostEdits[c.id].split=curSp.filter(x=>x!==i);else if(!inS){curSp.push(i);state.fixedCostEdits[c.id].split=curSp};render()}},mem.emoji+(inS?" ✓":""))})),
+          h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.editingFixedId=null;setState({});debouncedSync()}},"✓ 儲存")
         ));
       }else{
         content.append(h("div",{className:"cost-item",style:{borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`,cursor:"pointer",flexWrap:"wrap"},onClick:()=>{state.editingFixedId=c.id;render()}},
@@ -536,7 +537,7 @@ function render(){
     // Settlement calculation
     const balances=[0,0,0,0];
     // Fixed costs with custom paidBy and split
-    COSTS.forEach(c=>{const payer=c.paidBy||0;const splitters=c.split||[0,1,2,3];const share=Math.round(c.amount/splitters.length);balances[payer]+=c.amount;splitters.forEach(i=>balances[i]-=share)});
+    costsData.forEach(c=>{const payer=c.paidBy||0;const splitters=c.split||[0,1,2,3];const share=Math.round(c.amount/splitters.length);balances[payer]+=c.amount;splitters.forEach(i=>balances[i]-=share)});
     // Extra costs
     state.extraCosts.forEach(c=>{
       const payer=c.paidBy||0;const splitters=c.split||[0,1,2,3];
