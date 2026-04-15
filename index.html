@@ -218,7 +218,7 @@ const HOTELS=[{dates:"4/15",name:"富士吉田西旅館",area:"富士吉田",spo
 const SUGGESTED_ITEMS={0:["藥妝","面膜","零食伴手禮","衣服"],1:["藥妝","零食","公仔/玩具","衣服"],2:["清酒","保健食品","電器","伴手禮"],3:["保養品","精品包","甜點伴手禮","廚房用品"]};
 
 // ─── STATE ───
-let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:"",extraCosts:[],costItemInput:"",costAmountInput:""};
+let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:"",extraCosts:[],costItemInput:"",costAmountInput:"",costCurrency:"JPY",costPaidBy:0,costSplitAmong:[0,1,2,3],editingCostId:null};
 
 function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d);const c=localStorage.getItem("tokyo-trip-costs");if(c)state.extraCosts=JSON.parse(c)}catch(e){}}
 function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists));localStorage.setItem("tokyo-trip-costs",JSON.stringify(state.extraCosts))}catch(e){}}
@@ -424,18 +424,98 @@ function render(){
     COSTS.forEach(c=>{content.append(h("div",{className:"cost-item",style:{borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.yen?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.yen):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("div",{style:{fontSize:"10px",padding:"3px 8px",borderRadius:"20px",fontWeight:600,background:c.paid?"#8BC89B":"#E8927C",color:"#fff"}},c.paid?"已付":"未付")))});
     // Extra costs section
     content.append(h("div",{style:{fontSize:"13px",fontWeight:700,margin:"20px 0 8px",color:"#2a2a3e",display:"flex",justifyContent:"space-between",alignItems:"center"}},h("span",null,"旅途額外花費"),extraTotal>0?h("span",{style:{fontSize:"12px",color:"#E8927C",fontWeight:600}},"小計 NT$ "+extraTotal.toLocaleString()):null));
-    // Add cost input
+    // New expense form
+    const isJpy=state.costCurrency==="JPY";
+    const paidByMem=MEMBERS[state.costPaidBy];
+    // Currency toggle
+    content.append(h("div",{style:{display:"flex",gap:"6px",marginBottom:"8px"}},
+      h("button",{style:{flex:1,padding:"7px",borderRadius:"10px",border:isJpy?"2px solid #E8927C":"1.5px solid #eee",background:isJpy?"#FFF3E0":"#fff",cursor:"pointer",fontWeight:600,fontSize:"12px",color:isJpy?"#E8927C":"#999",fontFamily:"inherit"},onClick:()=>{state.costCurrency="JPY";render()}},"¥ 日幣"),
+      h("button",{style:{flex:1,padding:"7px",borderRadius:"10px",border:!isJpy?"2px solid #5B8DEF":"1.5px solid #eee",background:!isJpy?"#E3F2FD":"#fff",cursor:"pointer",fontWeight:600,fontSize:"12px",color:!isJpy?"#5B8DEF":"#999",fontFamily:"inherit"},onClick:()=>{state.costCurrency="TWD";render()}},"NT$ 台幣")
+    ));
+    if(isJpy)content.append(h("div",{style:{fontSize:"10px",color:"#999",marginBottom:"6px"}},"匯率 1 JPY ≈ 0.20 TWD"));
+    // Item + amount input
     const costNameInp=h("input",{className:"cost-input",placeholder:"項目",value:state.costItemInput,style:{flex:"1 1 55%"},onInput:e=>state.costItemInput=e.target.value});
-    const costAmtInp=h("input",{className:"cost-input",placeholder:"金額",value:state.costAmountInput,inputMode:"numeric",style:{flex:"1 1 30%",textAlign:"right"},onInput:e=>state.costAmountInput=e.target.value,onKeyDown:e=>{if(e.key==="Enter")addExtraCost()}});
-    content.append(h("div",{className:"cost-input-row"},costNameInp,costAmtInp,h("button",{className:"cost-add-btn",onClick:addExtraCost},"+") ));
+    const costAmtInp=h("input",{className:"cost-input",placeholder:isJpy?"¥ 金額":"NT$ 金額",value:state.costAmountInput,inputMode:"numeric",style:{flex:"1 1 30%",textAlign:"right"},onInput:e=>state.costAmountInput=e.target.value,onKeyDown:e=>{if(e.key==="Enter")addExtraCost()}});
+    content.append(h("div",{className:"cost-input-row"},costNameInp,costAmtInp));
+    // Paid by
+    content.append(h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰墊付？"));
+    content.append(h("div",{style:{display:"flex",gap:"6px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
+      const sel=state.costPaidBy===i;
+      return h("button",{style:{flex:1,padding:"6px 2px",borderRadius:"8px",border:sel?"2px solid "+mem.color:"1.5px solid #eee",background:sel?mem.color+"15":"#fff",cursor:"pointer",fontSize:"12px",fontWeight:sel?700:500,color:sel?mem.color:"#bbb",fontFamily:"inherit"},onClick:()=>{state.costPaidBy=i;render()}},mem.emoji+" "+mem.name)
+    })));
+    // Split among
+    content.append(h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰要分？（點擊切換）"));
+    content.append(h("div",{style:{display:"flex",gap:"6px",marginBottom:"10px"}},...MEMBERS.map((mem,i)=>{
+      const inSplit=state.costSplitAmong.includes(i);
+      return h("button",{style:{flex:1,padding:"6px 2px",borderRadius:"8px",border:inSplit?"2px solid "+mem.color:"1.5px solid #eee",background:inSplit?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"12px",fontWeight:inSplit?700:500,color:inSplit?mem.color:"#ccc",fontFamily:"inherit",opacity:inSplit?1:0.5},onClick:()=>{if(inSplit&&state.costSplitAmong.length>1)state.costSplitAmong=state.costSplitAmong.filter(x=>x!==i);else if(!inSplit)state.costSplitAmong=[...state.costSplitAmong,i];render()}},mem.emoji+(inSplit?" ✓":""))
+    })));
+    // Add button
+    content.append(h("button",{style:{width:"100%",padding:"10px",borderRadius:"10px",border:"none",background:"#E8927C",color:"#fff",fontWeight:700,fontSize:"14px",cursor:"pointer",marginBottom:"12px",fontFamily:"inherit"},onClick:addExtraCost},"+ 新增花費"));
     // Extra cost items
     if(state.extraCosts.length===0){
       content.append(h("div",{style:{textAlign:"center",padding:"16px",color:"#ccc",fontSize:"12px"}},"還沒有額外花費，旅途中隨時記錄！"));
     }else{
-      state.extraCosts.forEach(c=>{content.append(h("div",{className:"cost-item",style:{borderLeft:"3px solid #F2C46D"}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.date?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.date):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("button",{className:"del-btn",onClick:()=>deleteExtraCost(c.id)},"×")))});
+      state.extraCosts.forEach(c=>{
+        const payer=MEMBERS[c.paidBy||0];
+        const splitNames=(c.split||[0,1,2,3]).map(i=>MEMBERS[i].emoji).join("");
+        const isEditing=state.editingCostId===c.id;
+        if(isEditing){
+          // Edit mode
+          content.append(h("div",{style:{background:"#fff",border:"2px solid #E8927C",borderRadius:"12px",padding:"12px",marginBottom:"8px"}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+              h("span",{style:{fontSize:"13px",fontWeight:700,color:"#E8927C"}},"✏️ 編輯花費"),
+              h("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:"12px",color:"#999"},onClick:()=>{state.editingCostId=null;render()}},"取消")),
+            h("div",{className:"cost-input-row",style:{marginBottom:"8px"}},
+              h("input",{className:"cost-input",value:c.item,style:{flex:"1 1 55%"},onInput:e=>{c.item=e.target.value}}),
+              h("input",{className:"cost-input",value:c.amount.toString(),inputMode:"numeric",style:{flex:"1 1 30%",textAlign:"right"},onInput:e=>{c.amount=parseInt(e.target.value)||0}})),
+            h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰墊付？"),
+            h("div",{style:{display:"flex",gap:"4px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
+              const sel=(c.paidBy||0)===i;
+              return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:sel?"2px solid "+mem.color:"1.5px solid #eee",background:sel?mem.color+"15":"#fff",cursor:"pointer",fontSize:"11px",fontWeight:sel?700:500,color:sel?mem.color:"#bbb",fontFamily:"inherit"},onClick:()=>{c.paidBy=i;render()}},mem.emoji)})),
+            h("div",{style:{fontSize:"11px",color:"#999",fontWeight:600,marginBottom:"4px"}},"誰分攤？"),
+            h("div",{style:{display:"flex",gap:"4px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
+              const sp=c.split||[0,1,2,3];const inSplit=sp.includes(i);
+              return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:inSplit?"2px solid "+mem.color:"1.5px solid #eee",background:inSplit?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"11px",fontWeight:inSplit?700:500,color:inSplit?mem.color:"#ccc",fontFamily:"inherit",opacity:inSplit?1:0.5},onClick:()=>{if(!c.split)c.split=[0,1,2,3];if(inSplit&&c.split.length>1)c.split=c.split.filter(x=>x!==i);else if(!inSplit)c.split.push(i);render()}},mem.emoji+(inSplit?" ✓":""))})),
+            h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.editingCostId=null;setState({});debouncedSync()}},"✓ 儲存")
+          ));
+        }else{
+          // View mode - tap to edit
+          content.append(h("div",{className:"cost-item",style:{borderLeft:"3px solid "+payer.color,flexWrap:"wrap",cursor:"pointer"},onClick:()=>{state.editingCostId=c.id;render()}},
+            h("div",{style:{flex:"1 1 60%",minWidth:0}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),h("div",{style:{fontSize:"10px",color:"#999",marginTop:"2px"}},(c.note?c.note+" · ":"")+(c.date||""))),
+            h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"8px",flexShrink:0}},"NT$ "+c.amount.toLocaleString()),
+            h("button",{className:"del-btn",onClick:e=>{e.stopPropagation();deleteExtraCost(c.id)}},"×"),
+            h("div",{style:{width:"100%",display:"flex",gap:"8px",marginTop:"4px",fontSize:"10px",color:"#888"}},
+              h("span",{style:{background:payer.color+"15",padding:"1px 6px",borderRadius:"8px",color:payer.color,fontWeight:600}},payer.emoji+" 墊付"),
+              h("span",{style:{background:"#f5f5f5",padding:"1px 6px",borderRadius:"8px"}},splitNames+" 分攤"),
+              h("span",{style:{color:"#ccc"}},"點擊編輯")
+            )
+          ))}
+        });
     }
-    // Per person
-    content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #e8e8e8",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}},h("div",{style:{fontWeight:700,fontSize:"14px",marginBottom:"12px"}},"每人分擔"),h("div",{className:"summary-grid"},...MEMBERS.map(m=>h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"10px 14px",borderRadius:"12px",background:m.color+"10"}},h("span",{style:{fontSize:"22px"}},m.emoji),h("div",null,h("div",{style:{fontSize:"12px",fontWeight:600,color:m.color}},m.name),h("div",{style:{fontSize:"14px",fontWeight:800}},"NT$ "+perPerson.toLocaleString())))))));
+    // Settlement calculation
+    const balances=[0,0,0,0];
+    // Fixed costs: assume paidBy index 0 ("我"), split among all 4
+    COSTS.forEach(c=>{const share=Math.round(c.amount/4);balances[0]+=c.amount;for(let i=0;i<4;i++)balances[i]-=share});
+    // Extra costs
+    state.extraCosts.forEach(c=>{
+      const payer=c.paidBy||0;const splitters=c.split||[0,1,2,3];
+      const share=Math.round(c.amount/splitters.length);
+      balances[payer]+=c.amount;
+      splitters.forEach(i=>balances[i]-=share);
+    });
+    content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #e8e8e8",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}},
+      h("div",{style:{fontWeight:700,fontSize:"14px",marginBottom:"12px"}},"結算（誰該拿回 / 該付）"),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:"6px"}},...MEMBERS.map((m,i)=>{
+        const bal=balances[i];
+        const isPositive=bal>0;
+        return h("div",{style:{display:"flex",alignItems:"center",gap:"10px",padding:"10px 14px",borderRadius:"12px",background:m.color+"08"}},
+          h("span",{style:{fontSize:"22px"}},m.emoji),
+          h("div",{style:{flex:1}},h("div",{style:{fontSize:"12px",fontWeight:600,color:m.color}},m.name)),
+          h("div",{style:{fontSize:"14px",fontWeight:800,color:isPositive?"#8BC89B":"#E8927C"}},
+            (isPositive?"+":"")+"NT$ "+Math.abs(bal).toLocaleString()),
+          h("div",{style:{fontSize:"10px",color:"#999",width:"48px",textAlign:"right"}},isPositive?"該拿回":"該付出")
+        )}))
+    ));
   }
 
   app.append(content);
@@ -473,11 +553,15 @@ function clearCheckedItems(){
 
 function addExtraCost(){
   const item=state.costItemInput.trim();
-  const amount=parseInt(state.costAmountInput);
-  if(!item||!amount||isNaN(amount))return;
+  const raw=parseInt(state.costAmountInput);
+  if(!item||!raw||isNaN(raw))return;
+  const isJpy=state.costCurrency==="JPY";
+  const rate=0.20;
+  const amount=isJpy?Math.round(raw*rate):raw;
   const today=new Date();
   const dateStr=(today.getMonth()+1)+"/"+today.getDate();
-  state.extraCosts=[...state.extraCosts,{item,amount,date:dateStr,id:Date.now()}];
+  const note=isJpy?"¥"+raw.toLocaleString():"";
+  state.extraCosts=[...state.extraCosts,{item,amount,date:dateStr,id:Date.now(),note,paidBy:state.costPaidBy,split:state.costSplitAmong.slice()}];
   state.costItemInput="";state.costAmountInput="";
   setState({});debouncedSync();
 }
