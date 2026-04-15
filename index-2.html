@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>四月東京行 🗼</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗼</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{display:none}
+body{font-family:'Noto Sans TC','Helvetica Neue',sans-serif;background:#FAFAF8;color:#2a2a3e;max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+input::placeholder{color:#ccc}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.header{background:linear-gradient(145deg,#1a1a2e 0%,#2d1b4e 50%,#1a1a2e 100%);padding:32px 24px 20px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(232,146,124,0.12) 0%,transparent 70%)}
+.header-label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.4);margin-bottom:6px;font-weight:600}
+.header-title{font-size:28px;font-weight:900;color:#fff}
+.header-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-top:6px}
+.members{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.member-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px 5px 6px}
+.member-chip span:first-child{font-size:18px}
+.member-chip span:last-child{font-size:12px;font-weight:600}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10;overflow-x:auto}
+.tab-btn{flex:1 0 auto;min-width:0;padding:12px 8px;border:none;cursor:pointer;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2.5px solid transparent;white-space:nowrap}
+.tab-btn.active{border-bottom-color:#E8927C}
+.tab-btn .icon{font-size:14px}
+.tab-btn .label{font-size:9px;font-weight:500;color:#999}
+.tab-btn.active .label{font-weight:700;color:#E8927C}
+.content{padding:16px 20px 40px}
+.day-selector{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;margin-bottom:8px}
+.day-btn{border:none;cursor:pointer;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border-radius:14px;min-width:56px;flex-shrink:0;outline:2px solid transparent}
+.day-btn.active{outline-width:2px;outline-style:solid}
+.day-header{border-radius:16px;padding:16px 18px;margin-bottom:6px}
+.drive-banner{display:flex;align-items:center;gap:8px;background:#E3F2FD;border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:12px;color:#1565C0;font-weight:600}
+.timeline-row{display:flex;gap:8px;transition:opacity 0.3s}
+.check-btn{width:20px;height:20px;border-radius:6px;border:2px solid #ddd;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0}
+.check-btn.checked{border-color:#8BC89B;background:#8BC89B}
+.event-row{display:flex;gap:16px;cursor:default}
+.event-row.clickable{cursor:pointer}
+.time-col{display:flex;flex-direction:column;align-items:center;width:48px}
+.time-label{font-size:11px;font-weight:700;color:#999;margin-bottom:6px;white-space:nowrap}
+.event-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.event-icon.suggested{border:2px dashed}
+.event-line{width:2px;flex:1;margin-top:4px}
+.event-body{flex:1;padding-top:2px}
+.event-title-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+.event-name{font-size:15px;font-weight:700}
+.tag{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600}
+.event-desc{font-size:12px;color:#888;line-height:1.5}
+.suggest-note{margin-top:16px;padding:12px 16px;background:#FFF8E1;border-radius:12px;font-size:12px;color:#8D6E00;line-height:1.6;border-left:3px solid #F2C46D}
+/* Spot cards */
+.spot-card{border:1px solid #eee;background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;display:block}
+.spot-card:active{transform:scale(0.98)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center}
+.modal-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding:8px 0 32px;animation:slideUp 0.3s ease}
+.modal-handle{display:flex;justify-content:center;padding:8px 0 12px}
+.modal-handle div{width:40px;height:4px;border-radius:4px;background:#ddd}
+.modal-content{padding:0 24px}
+.info-box{background:#f8f8f6;border-radius:14px;padding:16px;margin-bottom:16px}
+.tip-box{border-radius:14px;padding:16px;margin-bottom:16px;border-left:3px solid}
+.nav-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#4285F4,#34A853);color:#fff;border-radius:14px;padding:14px 0;font-weight:700;font-size:15px;text-decoration:none;width:100%}
+/* Flight */
+.flight-card{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px 24px;color:#fff;position:relative;overflow:hidden}
+.flight-card::after{content:'';position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(232,146,124,0.15) 0%,transparent 70%)}
+/* Shopping */
+.member-selector{display:flex;gap:8px;margin-bottom:16px}
+.member-btn{flex:1;border:none;cursor:pointer;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;outline:1px solid #eee}
+.member-btn.active{outline-width:2px;outline-style:solid}
+.shop-input-row{display:flex;gap:8px;margin-bottom:12px}
+.shop-input{flex:1;padding:12px 16px;border-radius:12px;border:2px solid;font-size:14px;outline:none;background:#fff;font-family:inherit}
+.shop-add-btn{padding:0 20px;border-radius:12px;border:none;cursor:pointer;color:#fff;font-weight:700;font-size:20px}
+.quick-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.quick-tag{padding:5px 12px;border-radius:20px;border:1px solid;font-size:12px;cursor:pointer;font-weight:500;background:#fff}
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border-radius:12px;border:1px solid #eee;margin-bottom:6px}
+.shop-item.done{background:#f9f9f7;opacity:0.6}
+.shop-item .text{flex:1;font-size:14px}
+.shop-item .text.crossed{color:#999;text-decoration:line-through}
+.del-btn{background:none;border:none;cursor:pointer;font-size:16px;color:#ccc;padding:4px}
+.empty-state{text-align:center;padding:40px 20px;color:#ccc}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Hotel */
+.hotel-card{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid #eee;position:relative;overflow:hidden;margin-bottom:12px}
+.hotel-card .bar{position:absolute;top:0;left:0;width:4px;height:100%}
+/* Costs */
+.cost-cards{display:flex;gap:12px;margin-bottom:20px}
+.cost-card{flex:1;border-radius:14px;padding:18px 16px;color:#fff}
+.cost-item{display:flex;align-items:center;padding:12px 16px;border-radius:12px;margin-bottom:8px}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:8px 14px;margin-bottom:14px;border:1px solid #eee}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+.sync-dot{width:8px;height:8px;border-radius:50%}
+.sync-btn{border:none;cursor:pointer;background:none;font-size:12px;font-weight:600;color:#5B8DEF;padding:4px 8px;border-radius:8px}
+.sync-btn:active{background:#E3F2FD}
+.sync-spinner{width:14px;height:14px;border:2px solid #eee;border-top-color:#5B8DEF;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+
+// ========================================
+// ⚠️ 請把下面這行換成你的 Apps Script 網址
+// ========================================
+const API_URL = '__APPS_SCRIPT_URL__';
+// ========================================
+const hasApi = API_URL && !API_URL.includes('__APPS_SCRIPT');
+
+async function syncLoad() {
+  if (!hasApi) { loadShopLists(); return; }
+  state.syncStatus = 'loading'; render();
+  try {
+    const r = await fetch(API_URL);
+    const d = await r.json();
+    if (d && typeof d === 'object') { state.shopLists = d; saveShopLists(); state.syncStatus = 'synced'; state.lastSync = new Date(); }
+  } catch(e) { console.error(e); loadShopLists(); state.syncStatus = 'offline'; }
+  render();
+}
+
+async function syncSave() {
+  saveShopLists();
+  if (!hasApi) return;
+  state.syncStatus = 'saving'; render();
+  try {
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(state.shopLists), mode: 'no-cors' });
+    state.syncStatus = 'synced'; state.lastSync = new Date();
+  } catch(e) { console.error(e); state.syncStatus = 'offline'; }
+  render();
+}
+
+let _saveTimer = null;
+function debouncedSync() { clearTimeout(_saveTimer); _saveTimer = setTimeout(() => syncSave(), 800); }
+
+// ─── DATA ───
+const MEMBERS=[{name:"我",emoji:"🧑",color:"#E8927C"},{name:"Agoo",emoji:"👦",color:"#7CB5E8"},{name:"爸爸",emoji:"👨",color:"#8BC89B"},{name:"媽媽",emoji:"👩",color:"#D4A0D9"}];
+const COSTS=[{item:"河口湖住宿",amount:9905,yen:"49,400日圓",paid:false},{item:"東京住宿(3晚)",amount:31494,yen:"157,083日圓",paid:false},{item:"UBUYA住宿",amount:33814,yen:"",paid:true},{item:"機票",amount:65904,yen:"",paid:true},{item:"租車",amount:14795,yen:"",paid:true},{item:"美術館門票",amount:1675,yen:"",paid:true}];
+const FLIGHTS={departure:{code:"CI220",from:"09:00",to:"13:10",fromCity:"桃園 TPE",toCity:"羽田 HND"},arrival:{code:"CI221",from:"14:30",to:"16:55",fromCity:"羽田 HND",toCity:"桃園 TPE"}};
+const TAG_COLORS={"交通":"#5B8DEF","抵達":"#5B8DEF","租車":"#5B8DEF","自駕":"#5B8DEF","美食":"#E8927C","咖啡":"#C4956A","景點":"#8BC89B","散步":"#8BC89B","住宿":"#D4A0D9","退房":"#D4A0D9","溫泉":"#E8B87C","體驗":"#E8B87C","購物":"#F2C46D","美術館":"#B89CE8","展望台":"#5B8DEF","精釀":"#C4956A"};
+const SPOTS={
+toyota_rent:{name:"Toyota 租車 羽田機場店",nameJp:"トヨタレンタカー 羽田空港（国際線）店",address:"東京都大田区羽田1-15-11",lat:35.550216,lng:139.741062,placeId:"ChIJ7-2E67JhGGARvjx3fHsL74w",hours:"08:00–20:00",rating:4.0,reviews:107,desc:"位於羽田機場國際航廈附近，有免費接駁巴士往返航廈。取車後沿中央自動車道前往河口湖約2小時。",tips:"接駁巴士約每20–30分鐘一班。到3樓櫃檯登記再到1樓搭接駁車。",phone:"+81 3-5737-8100",forWho:"全家",transport:"driving"},
+dangozaka_sa:{name:"談合坂服務區",nameJp:"談合坂サービスエリア",address:"山梨県上野原市大野4943",lat:35.628302,lng:139.047036,placeId:"ChIJ21NeqsM_GWARKp719uWSi2k",hours:"24小時",rating:3.8,reviews:15075,desc:"中央自動車道上最大服務區，有美食廣場、星巴克、農產品市場。",tips:"推薦麻婆豆腐和當地水果。",phone:"+81 554-66-3734",forWho:"全家",transport:"driving"},
+fujiyama_onsen:{name:"Fujiyama 溫泉",nameJp:"ふじやま温泉",address:"山梨県富士吉田市新西原4-17-1",lat:35.483488,lng:138.779455,placeId:"ChIJW9hrJ8BgGWARkijUaC7BdcE",hours:"06:30–09:00, 10:00–23:00",rating:4.1,reviews:3486,desc:"純木造天然溫泉，有室內和露天風呂。陽台可眺望富士山。",tips:"平日¥1,600、週末¥2,000。自備毛巾可省錢。",phone:"+81 555-22-1126",forWho:"全家",transport:"driving"},
+arakurayama:{name:"新倉山淺間公園",nameJp:"新倉山浅間公園",address:"山梨県富士吉田市浅間2-4-1",lat:35.501391,lng:138.801631,placeId:"ChIJu6hYHU1nGWARfaBH0X127o8",hours:"24小時開放",rating:4.6,reviews:9706,desc:"日本最經典富士山拍攝景點！忠靈塔五重塔搭配富士山。需攀登約400階。",tips:"建議清晨前來。四月正值櫻花季。有緩坡步道可選。",phone:"+81 555-21-1000",forWho:"全家",transport:"driving"},
+kawaguchiko_sta:{name:"河口湖車站",nameJp:"河口湖駅",address:"山梨県南都留郡富士河口湖町船津",lat:35.498236,lng:138.768841,placeId:"ChIJMSQyt4JgGWARGxEj8inq2wc",hours:"車站全天",rating:4.1,reviews:131,desc:"河口湖交通中心，有觀光案內所和伴手禮商店。",forWho:"全家",transport:"driving"},
+ide_brewery:{name:"井出醸造店",nameJp:"井出醸造店",address:"山梨県南都留郡富士河口湖町船津8",lat:35.502065,lng:138.765601,placeId:"ChIJK4jkNSleGWARTc3G7kw2oBw",hours:"09:00–12:00, 13:00–17:00",rating:4.6,reviews:380,desc:"河口湖清酒釀造廠。¥850試飲5種清酒。有現場限定未殺菌生酒！",tips:"可預約導覽。推薦買酒粕麵包、清酒冰淇淋。",phone:"+81 555-72-0006",forWho:"爸媽最愛",buyWhat:"清酒、酒粕麵包、清酒冰淇淋、限定生酒",transport:"driving"},
+ubuya:{name:"UBUYA",nameJp:"うぶや",address:"山梨県南都留郡富士河口湖町浅川10",lat:35.512822,lng:138.768906,placeId:"ChIJK4evUjdeGWARU3gkvo_nU_4",hours:"入住15:00 / 退房11:00",rating:4.4,reviews:1714,desc:"河口湖畔頂級溫泉旅館，每間房正面眺望富士山。",tips:"有免費接駁車。入住後享下午茶。",phone:"+81 555-72-1145",forWho:"全家",transport:"driving"},
+oishi_park:{name:"大石公園",nameJp:"大石公園",address:"山梨県南都留郡富士河口湖町大石2525-11先",lat:35.522904,lng:138.745752,placeId:"ChIJlSsLjKZfGWARBCllOgtTLqI",hours:"24小時開放",rating:4.4,reviews:21592,desc:"河口湖北岸美麗公園，四月有鬱金香。免費入場。",tips:"免費停車場。花園平台咖啡廳推薦。",phone:"+81 555-76-8230",forWho:"全家",transport:"driving"},
+via_inn:{name:"Via Inn Prime 日本橋人形町",nameJp:"ヴィアイン プライム日本橋人形町",address:"東京都中央区日本橋小網町16-12",lat:35.685108,lng:139.780118,placeId:"ChIJhYnfZxeJGGARxaoRQQNtDkY",hours:"24小時",rating:4.3,reviews:785,desc:"日本橋人形町商務飯店，房間寬敞。距地鐵站步行5分鐘。",tips:"有投幣洗衣機。附近很多美食老店。",phone:"+81 3-5640-5489",forWho:"全家"},
+imperial_palace:{name:"皇居",nameJp:"皇居",address:"東京都千代田区千代田1-1",lat:35.685175,lng:139.752799,placeId:"ChIJTQbYAg2MGGARt22eNwtfGtE",hours:"東御苑：09:00–16:30（週一五休）",rating:4.4,reviews:30453,desc:"日本天皇居所，東御苑免費開放。二重橋是經典地標。",tips:"4/19是週六有開放！建議1–1.5小時。",phone:"+81 3-3213-1111",forWho:"全家（爸媽特別喜歡）"},
+bongen_coffee:{name:"BONGEN COFFEE",nameJp:"BONGEN COFFEE 日本橋店",address:"東京都中央区京橋1-19-4",lat:35.676833,lng:139.773757,placeId:"ChIJ8WsLrN-JGGAR5e_DmVwDirI",hours:"10:00–17:00（週三休）",rating:4.2,reviews:210,desc:"超人氣精品咖啡店，極簡日式風格。招牌拿鐵含三份濃縮。",tips:"建議開門前30–45分鐘排隊。座位僅約10個。",phone:"+81 3-5915-4841",forWho:"年輕人最愛",buyWhat:"咖啡豆伴手禮"},
+artizon:{name:"ARTIZON MUSEUM",nameJp:"アーティゾン美術館",address:"東京都中央区京橋1-7-2",lat:35.678763,lng:139.771892,placeId:"ChIJOzAxseKLGGARWxBlxNWWRPs",hours:"10:00–18:00（五至20:00，一休）",rating:4.5,reviews:2893,desc:"石橋財團美術館，正舉辦莫內特展！學生免費。",tips:"線上預約較便宜。莫內展很熱門要提前到。",phone:"+81 50-5541-8600",forWho:"全家",buyWhat:"莫內周邊、明信片、藝術書籍"},
+ginza_six:{name:"GINZA SIX",nameJp:"GINZA SIX",address:"東京都中央区銀座6-10-1",lat:35.669769,lng:139.764176,placeId:"ChIJAQAsR--LGGAR_AmB8WMDy88",hours:"10:30–20:30",rating:4.0,reviews:23094,desc:"銀座最大複合商場241品牌。頂樓免費花園可眺望東京鐵塔。",tips:"頂樓免費！B2伴手禮必逛。蔦屋書店也在這。",phone:"+81 3-6891-3390",forWho:"全家",buyWhat:"精品、B2甜點伴手禮"},
+asakusa_sensoji:{name:"淺草寺・仲見世通",nameJp:"浅草寺・仲見世通り",address:"東京都台東区浅草2-3-1",lat:35.714765,lng:139.796655,placeId:"ChIJ8T1GpMGOGGARDYGSgpooDWw",hours:"全天（商店約10:00起）",rating:4.5,reviews:93527,desc:"東京最古老寺廟，仲見世通有傳統小吃和伴手禮。",tips:"早上人少適合拍照。必吃：鯛魚燒、人形燒。",phone:"+81 3-3842-0181",forWho:"全家（爸媽最愛）",buyWhat:"人形燒、扇子、和風小物、御守"},
+ameyoko:{name:"上野阿美橫町",nameJp:"アメ横商店街",address:"東京都台東区上野6-10-7",lat:35.709003,lng:139.774626,placeId:"ChIJh7eDrwCPGGARCs9fpCkKS2U",hours:"約10:00–19:00",rating:4.3,reviews:10781,desc:"超熱鬧傳統市場！藥妝零食海鮮應有盡有，可殺價！",tips:"藥妝先去OS Drug比價最划算。",phone:"+81 3-3832-5053",forWho:"全家",buyWhat:"藥妝、保健食品、零食、海鮮乾貨"},
+omotesando:{name:"表參道",nameJp:"表参道ヒルズ",address:"東京都渋谷区神宮前4-12-10",lat:35.667287,lng:139.708616,placeId:"ChIJCx6jgqGMGGARpfB5UIap15k",hours:"11:00–20:00",rating:4.0,reviews:8386,desc:"「東京香榭麗舍」，精品旗艦店林立。安藤忠雄設計。",tips:"精品店直接退10%消費稅比百貨划算！",phone:"+81 3-3497-0310",forWho:"年輕人 & 媽媽",buyWhat:"精品包包、NUMBER SUGAR牛奶糖"},
+takeshita:{name:"竹下通",nameJp:"竹下通り",address:"東京都渋谷区神宮前1丁目",lat:35.671034,lng:139.705182,placeId:"ChIJlVne8bqMGGARtX5O6ojMvsI",hours:"約10:00–20:00",desc:"卡哇伊文化發源地！350公尺潮流服飾、大創、可麗餅。",tips:"可麗餅必吃！大創百元店超好逛。",forWho:"年輕人最愛",buyWhat:"平價潮流、文具、大創百元商品"}
+};
+const DAYS=[
+{day:1,date:"04/15",weekday:"二",title:"出發！河口湖",region:"羽田 → 河口湖",color:"#E8927C",icon:"✈️",isDriving:true,events:[
+{time:"09:00",title:"桃園機場出發",desc:"中華航空 CI220",icon:"✈️",tag:"交通"},
+{time:"13:10",title:"抵達羽田機場",icon:"🛬",tag:"抵達"},
+{time:"14:30",title:"領取租車",desc:"Toyota 羽田機場國際航線店",icon:"🚗",tag:"租車",spotId:"toyota_rent"},
+{time:"15:30",title:"出發前往河口湖",desc:"途經談合坂服務區休息",icon:"🛣️",tag:"自駕",spotId:"dangozaka_sa"},
+{time:"17:30",title:"下吉田吃飯 + 入住飯店",desc:"富士吉田地區",icon:"🍜",tag:"美食"},
+{time:"21:00",title:"Fujiyama 溫泉",icon:"♨️",tag:"溫泉",spotId:"fujiyama_onsen"}]},
+{day:2,date:"04/16",weekday:"三",title:"富士山一日遊",region:"下吉田 → 河口湖 → UBUYA",color:"#7CB5E8",icon:"🗻",isDriving:true,events:[
+{time:"07:00",title:"早餐：麥當勞",icon:"🍔",tag:"美食"},
+{time:"08:00",title:"新倉山淺間公園",desc:"經典富士山與五重塔",icon:"⛩️",tag:"景點",spotId:"arakurayama"},
+{time:"11:30",title:"河口湖午餐",desc:"河口湖車站附近",icon:"🍽️",tag:"美食",spotId:"kawaguchiko_sta"},
+{time:"12:30",title:"河口湖車站走走／山中湖",icon:"🚶",tag:"散步"},
+{time:"13:00",title:"井出醸造店",desc:"品嚐清酒",icon:"🍶",tag:"體驗",spotId:"ide_brewery"},
+{time:"15:00",title:"入住 UBUYA",desc:"河口湖畔溫泉旅館",icon:"🏨",tag:"住宿",spotId:"ubuya"},
+{time:"17:30",title:"晚餐",desc:"旅館晚餐",icon:"🍱",tag:"美食"}]},
+{day:3,date:"04/17",weekday:"四",title:"回到東京",region:"河口湖 → 東京",color:"#8BC89B",icon:"🌸",isDriving:true,events:[
+{time:"11:00",title:"UBUYA 退房",icon:"🏨",tag:"退房"},
+{time:"11:00",title:"大石公園 / 富士大石花園平台",icon:"🌷",tag:"景點",spotId:"oishi_park"},
+{time:"14:30",title:"啟程回東京",icon:"🚗",tag:"自駕"},
+{time:"18:00",title:"入住 Via Inn Prime",desc:"日本橋人形町",icon:"🏨",tag:"住宿",spotId:"via_inn"},
+{time:"19:00",title:"錦糸町還車 + 晚餐",desc:"烤牛舌 ねぎし / 壽司",icon:"🥩",tag:"美食"},
+{time:"21:00",title:"逛錦糸町藥妝店",icon:"🛍️",tag:"購物"}]},
+{day:4,date:"04/18",weekday:"五",title:"東京鐵塔 & 澀谷",region:"芝公園 → 澀谷",color:"#D4A0D9",icon:"🗼",events:[
+{time:"09:00",title:"吃早餐",icon:"🥐",tag:"美食"},
+{time:"10:00",title:"赤羽橋 / 芝公園看東京鐵塔",icon:"🗼",tag:"景點"},
+{time:"12:00",title:"澀谷午餐",desc:"迴轉壽司 金澤壽司 PARCO / 壽司郎",icon:"🍣",tag:"美食"},
+{time:"14:00",title:"澀谷逛街（建議加入）",desc:"SHIBUYA 109、PARCO、唐吉訶德",icon:"🛍️",tag:"購物"},
+{time:"16:00",title:"原宿竹下通（建議加入）",desc:"平價潮流・大創・可麗餅",icon:"🎀",tag:"購物",spotId:"takeshita"},
+{time:"18:00",title:"表參道逛街（建議加入）",desc:"精品大道・NUMBER SUGAR",icon:"👜",tag:"購物",spotId:"omotesando"}]},
+{day:5,date:"04/19",weekday:"六",title:"皇居・銀座文藝日",region:"皇居 → 丸之內 → 銀座",color:"#B89CE8",icon:"🏛️",events:[
+{time:"09:00",title:"皇居",desc:"東御苑（週六有開放！）",icon:"🏯",tag:"景點",spotId:"imperial_palace"},
+{time:"11:00",title:"從丸之內經有樂町走走",icon:"🚶",tag:"散步"},
+{time:"12:00",title:"BONGEN COFFEE",desc:"日本橋店",icon:"☕",tag:"咖啡",spotId:"bongen_coffee"},
+{time:"13:00",title:"上野阿美橫町（建議加入）",desc:"便宜藥妝零食大採購",icon:"🛒",tag:"購物",spotId:"ameyoko"},
+{time:"15:30",title:"ARTIZON MUSEUM",desc:"看莫內展覽",icon:"🎨",tag:"美術館",spotId:"artizon"},
+{time:"18:00",title:"銀座晚餐",desc:"GURGAON(印度料理) / 烤牛舌 ねぎし",icon:"🍛",tag:"美食"},
+{time:"19:30",title:"銀座逛街",desc:"UNIQLO、Ginza Six",icon:"🛍️",tag:"購物",spotId:"ginza_six"},
+{time:"21:00",title:"Craft Beer",desc:"ibrew ginza / Uchu Brewing",icon:"🍺",tag:"精釀"}]},
+{day:6,date:"04/20",weekday:"日",title:"回家！",region:"人形町 / 淺草 → 羽田",color:"#F2C46D",icon:"🏠",events:[
+{time:"08:00",title:"人形町附近晃晃",icon:"🚶",tag:"散步"},
+{time:"09:30",title:"淺草晃晃（建議加入）",desc:"淺草寺＋仲見世通採購伴手禮",icon:"⛩️",tag:"景點",spotId:"asakusa_sensoji"},
+{time:"11:00",title:"出發往羽田機場",icon:"🚃",tag:"交通"},
+{time:"14:30",title:"回程航班 CI221",desc:"16:55 抵達桃園",icon:"✈️",tag:"交通"}]}
+];
+const HOTELS=[{dates:"4/15",name:"河口湖住宿（飯店名待確認）",area:"富士吉田"},{dates:"4/16",name:"UBUYA",area:"河口湖",spotId:"ubuya"},{dates:"4/17–4/19",name:"Via Inn Prime 日本橋人形町",area:"東京・日本橋",spotId:"via_inn"}];
+const SUGGESTED_ITEMS={0:["藥妝","面膜","零食伴手禮","衣服"],1:["藥妝","零食","公仔/玩具","衣服"],2:["清酒","保健食品","電器","伴手禮"],3:["保養品","精品包","甜點伴手禮","廚房用品"]};
+
+// ─── STATE ───
+let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:""};
+
+function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d)}catch(e){}}
+function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists))}catch(e){}}
+if(hasApi){syncLoad()}else{loadShopLists();}
+
+function setState(updates){Object.assign(state,updates);render()}
+
+// ─── RENDER HELPERS ───
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==="style"&&typeof v==="object")Object.assign(el.style,v);
+    else if(k.startsWith("on"))el.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="className")el.className=v;
+    else if(k==="href"||k==="target"||k==="rel"||k==="placeholder"||k==="type"||k==="value"||k==="inputMode")el.setAttribute(k,v);
+    else el[k]=v;
+  });
+  children.flat(Infinity).forEach(c=>{if(c!=null&&c!==false)el.append(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c)});
+  return el;
+}
+
+function renderSpotModal(spot){
+  if(!spot)return null;
+  const navUrl=`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}&destination_place_id=${spot.placeId||""}`;
+  const overlay=h("div",{className:"modal-overlay",onClick:()=>setState({selectedSpot:null})},
+    h("div",{className:"modal-sheet",onClick:e=>e.stopPropagation()},
+      h("div",{className:"modal-handle"},h("div")),
+      h("div",{className:"modal-content"},
+        h("div",{style:{fontSize:"20px",fontWeight:800,marginBottom:"2px"}},spot.name),
+        spot.nameJp?h("div",{style:{fontSize:"12px",color:"#aaa",marginBottom:"12px"}},spot.nameJp):null,
+        h("div",{style:{display:"flex",gap:"8px",marginBottom:"16px",flexWrap:"wrap"}},
+          spot.rating?h("span",{style:{fontSize:"11px",padding:"4px 10px",borderRadius:"20px",background:"#FFF3E0",color:"#E8927C",fontWeight:700}},`⭐ ${spot.rating} (${spot.reviews?.toLocaleString()})`):null,
+          spot.forWho?h("span",{style:{fontSize:"11px",padding:"4px 10px",borderRadius:"20px",background:"#E8F5E9",color:"#4CAF50",fontWeight:700}},`👥 ${spot.forWho}`):null,
+          spot.transport==="driving"?h("span",{style:{fontSize:"11px",padding:"4px 10px",borderRadius:"20px",background:"#E3F2FD",color:"#2196F3",fontWeight:700}},"🚗 自駕"):null
+        ),
+        h("div",{style:{fontSize:"14px",color:"#555",lineHeight:"1.7",marginBottom:"16px"}},spot.desc),
+        h("div",{className:"info-box"},
+          h("div",{style:{display:"flex",flexDirection:"column",gap:"10px"}},
+            h("div",{style:{display:"flex",gap:"10px"}},"📍 ",h("span",{style:{fontSize:"13px",color:"#666"}},spot.address)),
+            spot.hours?h("div",{style:{display:"flex",gap:"10px"}},"🕐 ",h("span",{style:{fontSize:"13px",color:"#666"}},spot.hours)):null,
+            spot.phone?h("div",{style:{display:"flex",gap:"10px"}},"📞 ",h("a",{href:`tel:${spot.phone}`,style:{fontSize:"13px",color:"#5B8DEF",textDecoration:"none"}},spot.phone)):null
+          )
+        ),
+        spot.tips?h("div",{className:"tip-box",style:{background:"linear-gradient(135deg,#FFF8E1,#FFF3E0)",borderLeftColor:"#F2C46D"}},
+          h("div",{style:{fontSize:"12px",fontWeight:700,color:"#E8927C",marginBottom:"6px"}},"💡 小提醒"),
+          h("div",{style:{fontSize:"13px",color:"#666",lineHeight:"1.6"}},spot.tips)):null,
+        spot.buyWhat?h("div",{className:"tip-box",style:{background:"linear-gradient(135deg,#F3E5F5,#FCE4EC)",borderLeftColor:"#D4A0D9"}},
+          h("div",{style:{fontSize:"12px",fontWeight:700,color:"#D4A0D9",marginBottom:"6px"}},"🛒 推薦購買"),
+          h("div",{style:{fontSize:"13px",color:"#666",lineHeight:"1.7",whiteSpace:"pre-line"}},spot.buyWhat)):null,
+        h("a",{href:navUrl,target:"_blank",rel:"noopener noreferrer",className:"nav-btn"},"🧭 Google Maps 導航")
+      )
+    )
+  );
+  return overlay;
+}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  const{tab:ct,activeDay,checkedItems,selectedSpot,activeMember,shopLists,shopInput}=state;
+  const currentDay=DAYS[activeDay];
+  const total=COSTS.reduce((s,c)=>s+c.amount,0);
+  const perPerson=Math.round(total/4);
+
+  // Header
+  app.append(h("div",{className:"header"},
+    h("div",{className:"header-label"},"FAMILY TRIP 2026"),
+    h("div",{className:"header-title"},"四月東京行 🗼"),
+    h("div",{className:"header-sub"},"04/15 – 04/20 ・ 6天5夜"),
+    h("div",{className:"members"},...MEMBERS.map(m=>h("div",{className:"member-chip"},h("span",null,m.emoji),h("span",{style:{color:m.color}},m.name))))
+  ));
+
+  // Tabs
+  const tabs=[{id:"itinerary",label:"行程",icon:"📅"},{id:"spots",label:"景點",icon:"📍"},{id:"shopping",label:"購物清單",icon:"🛒"},{id:"flights",label:"航班",icon:"✈️"},{id:"hotels",label:"住宿",icon:"🏨"},{id:"costs",label:"費用",icon:"💰"}];
+  app.append(h("div",{className:"tabs"},...tabs.map(t=>h("button",{className:"tab-btn"+(ct===t.id?" active":""),onClick:()=>setState({tab:t.id})},h("span",{className:"icon"},t.icon),h("span",{className:"label"},t.label)))));
+
+  const content=h("div",{className:"content"});
+
+  // ── ITINERARY ──
+  if(ct==="itinerary"){
+    const sel=h("div",{className:"day-selector"},...DAYS.map((d,i)=>h("button",{className:"day-btn"+(activeDay===i?" active":""),style:{background:activeDay===i?d.color+"15":"transparent",outlineColor:activeDay===i?d.color:"transparent"},onClick:()=>setState({activeDay:i})},h("div",{style:{fontSize:"18px"}},d.icon),h("div",{style:{fontSize:"12px",fontWeight:800,color:activeDay===i?d.color:"#888"}},"D"+d.day),h("div",{style:{fontSize:"9px",color:"#aaa"}},d.date))));
+    content.append(sel);
+    content.append(h("div",{className:"day-header",style:{background:`linear-gradient(135deg,${currentDay.color}12,${currentDay.color}05)`,borderLeft:`4px solid ${currentDay.color}`}},h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},h("span",{style:{fontSize:"24px"}},currentDay.icon),h("div",null,h("div",{style:{fontSize:"17px",fontWeight:800}},`Day ${currentDay.day}：${currentDay.title}`),h("div",{style:{fontSize:"12px",color:"#999"}},`${currentDay.date}（週${currentDay.weekday}）・${currentDay.region}`)))));
+    if(currentDay.isDriving)content.append(h("div",{className:"drive-banner"},"🚗 自駕日 — 點擊景點可開啟導航"));
+    const tl=h("div",{style:{paddingLeft:"4px"}});
+    currentDay.events.forEach((ev,idx)=>{
+      const k=`${activeDay}-${idx}`,ch=checkedItems[k];
+      const tc=TAG_COLORS[ev.tag]||"#999";
+      const hasSpot=!!ev.spotId;
+      const isSugg=ev.title?.includes("建議加入");
+      const row=h("div",{className:"timeline-row",style:{opacity:ch?"0.45":"1"}},
+        h("div",{style:{paddingTop:"2px"}},h("button",{className:"check-btn"+(ch?" checked":""),onClick:e=>{e.stopPropagation();const nc={...checkedItems};nc[k]=!nc[k];setState({checkedItems:nc})}},ch?"✓":"")),
+        h("div",{style:{flex:1}},h("div",{className:"event-row"+(hasSpot?" clickable":""),onClick:()=>hasSpot&&setState({selectedSpot:SPOTS[ev.spotId]})},
+          h("div",{className:"time-col"},h("div",{className:"time-label"},ev.time),h("div",{className:"event-icon"+(isSugg?" suggested":""),style:{background:tc+"15",borderColor:isSugg?tc+"60":"transparent"}},ev.icon),idx<currentDay.events.length-1?h("div",{className:"event-line",style:{background:`linear-gradient(to bottom,${tc}30,transparent)`}}):null),
+          h("div",{className:"event-body",style:{paddingBottom:idx<currentDay.events.length-1?"20px":"0"}},h("div",{className:"event-title-row"},h("div",{className:"event-name"},ev.title),h("span",{className:"tag",style:{background:tc+"18",color:tc}},ev.tag),hasSpot?h("span",{className:"tag",style:{background:"#E3F2FD",color:"#2196F3"}},"📍 點我"):null),ev.desc?h("div",{className:"event-desc"},ev.desc):null)
+        ))
+      );
+      tl.append(row);
+    });
+    content.append(tl);
+    if(currentDay.events.some(e=>e.title?.includes("建議加入")))content.append(h("div",{className:"suggest-note"},"💡 虛線框的是建議加入的逛街購物點，可自由取捨！"));
+  }
+
+  // ── SPOTS ──
+  if(ct==="spots"){
+    DAYS.forEach((day,di)=>{
+      const se=day.events.filter(e=>e.spotId);
+      if(!se.length)return;
+      content.append(h("div",{style:{fontSize:"13px",fontWeight:800,color:day.color,marginBottom:"8px",marginTop:di>0?"16px":"0",display:"flex",alignItems:"center",gap:"6px"}},h("span",null,day.icon),` Day ${day.day} — ${day.title}`,day.isDriving?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E3F2FD",color:"#2196F3",fontWeight:600}},"🚗"):null));
+      se.forEach(e=>{const sp=SPOTS[e.spotId];
+        content.append(h("button",{className:"spot-card",onClick:()=>setState({selectedSpot:sp})},
+          h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},h("div",{style:{fontSize:"14px",fontWeight:700,flex:1}},sp.name),sp.rating?h("span",{style:{fontSize:"11px",color:"#E8927C",fontWeight:700,flexShrink:0,marginLeft:"8px"}},"⭐ "+sp.rating):null),
+          sp.nameJp?h("div",{style:{fontSize:"11px",color:"#bbb",marginBottom:"6px"}},sp.nameJp):null,
+          h("div",{style:{fontSize:"12px",color:"#888",lineHeight:"1.5",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}},sp.desc),
+          h("div",{style:{display:"flex",gap:"6px",marginTop:"8px",flexWrap:"wrap"}},sp.forWho?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E8F5E9",color:"#4CAF50",fontWeight:600}},"👥 "+sp.forWho):null,sp.transport==="driving"?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#E3F2FD",color:"#2196F3",fontWeight:600}},"🚗"):null,sp.buyWhat?h("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:"#F3E5F5",color:"#9C27B0",fontWeight:600}},"🛒"):null)
+        ));
+      });
+    });
+  }
+
+  // ── SHOPPING ──
+  if(ct==="shopping"){
+    const m=MEMBERS[activeMember];
+    const myList=shopLists[activeMember]||[];
+    const checkedCount=myList.filter(i=>i.checked).length;
+
+    // Sync bar
+    const syncColor=state.syncStatus==="synced"?"#8BC89B":state.syncStatus==="offline"?"#E8927C":"#F2C46D";
+    const syncLabel=state.syncStatus==="synced"?"已同步":state.syncStatus==="offline"?"離線模式":state.syncStatus==="loading"?"載入中...":state.syncStatus==="saving"?"儲存中...":hasApi?"待同步":"本地模式";
+    content.append(h("div",{className:"sync-bar"},
+      h("div",{className:"sync-status"},
+        state.syncStatus==="loading"||state.syncStatus==="saving"?h("span",{className:"sync-spinner"}):h("div",{className:"sync-dot",style:{background:syncColor}}),
+        h("span",{style:{color:syncColor}},syncLabel),
+        state.lastSync?h("span",{style:{color:"#ccc",fontSize:"10px"}},state.lastSync.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})):null
+      ),
+      hasApi?h("button",{className:"sync-btn",onClick:()=>syncLoad()},"🔄 重新整理"):h("span",{style:{fontSize:"10px",color:"#ccc"}},"未設定同步")
+    ));
+    // Member selector
+    content.append(h("div",{className:"member-selector"},...MEMBERS.map((mem,i)=>{
+      const cnt=(shopLists[i]||[]).length;
+      const isA=activeMember===i;
+      return h("button",{className:"member-btn"+(isA?" active":""),style:{background:isA?mem.color+"18":"#fff",outlineColor:isA?mem.color:"#eee"},onClick:()=>setState({activeMember:i})},h("span",{style:{fontSize:"24px"}},mem.emoji),h("span",{style:{fontSize:"11px",fontWeight:700,color:isA?mem.color:"#999"}},mem.name),cnt>0?h("span",{style:{fontSize:"9px",padding:"1px 6px",borderRadius:"10px",background:mem.color+"20",color:mem.color,fontWeight:700}},cnt+"項"):null);
+    })));
+    // Input
+    const inp=h("input",{className:"shop-input",placeholder:`${m.name}想買什麼？`,value:shopInput,style:{borderColor:m.color+"30"},onInput:e=>state.shopInput=e.target.value,onKeyDown:e=>{if(e.key==="Enter"){addShopItem()}}});
+    content.append(h("div",{className:"shop-input-row"},inp,h("button",{className:"shop-add-btn",style:{background:m.color},onClick:addShopItem},"+") ));
+    // Quick tags
+    if(myList.length<3){
+      content.append(h("div",null,h("div",{style:{fontSize:"11px",color:"#999",marginBottom:"6px",fontWeight:600}},"快速新增："),h("div",{className:"quick-tags"},...SUGGESTED_ITEMS[activeMember].map(s=>{
+        const has=myList.some(x=>x.text===s);
+        return h("button",{className:"quick-tag",style:{borderColor:m.color+"30",background:has?m.color+"15":"#fff",color:has?m.color:"#888"},onClick:()=>{if(!has){const nl={...shopLists};nl[activeMember]=[...myList,{text:s,checked:false,id:Date.now()+Math.random()}];setState({shopLists:nl});debouncedSync()}}},`${has?"✓ ":"+ "}${s}`);
+      }))));
+    }
+    // List
+    if(myList.length===0){
+      content.append(h("div",{className:"empty-state"},h("div",{style:{fontSize:"40px",marginBottom:"8px"}},"🛒"),h("div",{style:{fontSize:"14px",fontWeight:600}},m.name+"的清單還是空的"),h("div",{style:{fontSize:"12px",marginTop:"4px"}},"輸入想買的東西或點擊快速新增")));
+    }else{
+      const unchecked=myList.filter(i=>!i.checked);
+      const checked=myList.filter(i=>i.checked);
+      unchecked.forEach(item=>{
+        content.append(h("div",{className:"shop-item"},h("button",{className:"check-btn",onClick:()=>toggleShopItem(item.id)}),h("div",{className:"text"},item.text),h("button",{className:"del-btn",onClick:()=>deleteShopItem(item.id)},"×")));
+      });
+      if(checkedCount>0){
+        content.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"12px 0 6px"}},h("span",{style:{fontSize:"12px",color:"#999",fontWeight:600}},`已買 (${checkedCount})`),h("button",{style:{fontSize:"11px",color:"#E8927C",background:"none",border:"none",cursor:"pointer",fontWeight:600},onClick:clearCheckedItems},"清除已買")));
+        checked.forEach(item=>{
+          content.append(h("div",{className:"shop-item done"},h("button",{className:"check-btn checked",onClick:()=>toggleShopItem(item.id)},"✓"),h("div",{className:"text crossed"},item.text),h("button",{className:"del-btn",onClick:()=>deleteShopItem(item.id)},"×")));
+        });
+      }
+    }
+    // Summary
+    const totalAll=Object.values(shopLists).reduce((s,l)=>s+l.length,0);
+    if(totalAll>0){
+      content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 18px",border:"1px solid #eee"}},
+        h("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"10px"}},"全家購物統計"),
+        h("div",{className:"summary-grid"},...MEMBERS.map((mem,i)=>{const l=shopLists[i]||[];const done=l.filter(x=>x.checked).length;return h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"8px 12px",borderRadius:"10px",background:mem.color+"08"}},h("span",{style:{fontSize:"18px"}},mem.emoji),h("div",null,h("div",{style:{fontSize:"11px",color:mem.color,fontWeight:600}},mem.name),h("div",{style:{fontSize:"12px",color:"#666"}},`${done}/${l.length} 已買`)))}))
+      ));
+    }
+  }
+
+  // ── FLIGHTS ──
+  if(ct==="flights"){
+    [["去程 DEPARTURE",FLIGHTS.departure],["回程 RETURN",FLIGHTS.arrival]].forEach(([label,fl])=>{
+      content.append(h("div",{className:"flight-card",style:{marginBottom:"16px"}},h("div",{style:{fontSize:"11px",textTransform:"uppercase",letterSpacing:"2px",color:"#E8927C",marginBottom:"12px",fontWeight:700}},label),h("div",{style:{display:"flex",alignItems:"center",gap:"16px"}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"28px",fontWeight:800,letterSpacing:"-1px"}},fl.from),h("div",{style:{fontSize:"12px",color:"rgba(255,255,255,0.5)",marginTop:"2px"}},fl.fromCity)),h("div",{style:{flex:1,textAlign:"center"}},h("div",{style:{fontSize:"10px",color:"rgba(255,255,255,0.4)",marginBottom:"4px"}},fl.code),h("div",{style:{display:"flex",alignItems:"center",gap:"4px",justifyContent:"center"}},h("div",{style:{height:"1px",flex:1,background:"rgba(255,255,255,0.2)"}}),h("span",{style:{fontSize:"16px"}},"✈️"),h("div",{style:{height:"1px",flex:1,background:"rgba(255,255,255,0.2)"}})),h("div",{style:{fontSize:"10px",color:"rgba(255,255,255,0.3)",marginTop:"4px"}},"中華航空")),h("div",{style:{flex:1,textAlign:"right"}},h("div",{style:{fontSize:"28px",fontWeight:800,letterSpacing:"-1px"}},fl.to),h("div",{style:{fontSize:"12px",color:"rgba(255,255,255,0.5)",marginTop:"2px"}},fl.toCity)))));
+    });
+    content.append(h("div",{style:{background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #eee",fontSize:"13px",color:"#666",lineHeight:"1.8"}},h("div",{style:{fontWeight:700,color:"#2a2a3e",marginBottom:"8px",fontSize:"14px"}},"提醒事項"),h("div",null,"🛂 護照和登機證"),h("div",null,"🚗 租車預約號碼：99936304700"),h("div",null,"⏰ 出發前2小時抵達機場")));
+  }
+
+  // ── HOTELS ──
+  if(ct==="hotels"){
+    HOTELS.forEach((ht,i)=>{
+      const card=h("div",{className:"hotel-card",style:{cursor:ht.spotId?"pointer":"default"},onClick:()=>ht.spotId&&setState({selectedSpot:SPOTS[ht.spotId]})},h("div",{className:"bar",style:{background:MEMBERS[i%MEMBERS.length].color}}),h("div",{style:{fontSize:"11px",color:"#999",marginBottom:"6px",fontWeight:600}},"📅 "+ht.dates),h("div",{style:{fontSize:"16px",fontWeight:800,marginBottom:"4px"}},ht.name),h("div",{style:{fontSize:"12px",color:"#888"}},"📍 "+ht.area),ht.spotId?h("div",{style:{fontSize:"11px",color:"#5B8DEF",marginTop:"6px",fontWeight:600}},"點擊查看詳情 →"):null);
+      content.append(card);
+    });
+  }
+
+  // ── COSTS ──
+  if(ct==="costs"){
+    content.append(h("div",{className:"cost-cards"},h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#E8927C,#d4765e)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"總費用"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+total.toLocaleString())),h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#7CB5E8,#5a9ad5)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"每人平均"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+perPerson.toLocaleString()))));
+    COSTS.forEach(c=>{content.append(h("div",{className:"cost-item",style:{background:c.paid?"rgba(139,200,155,0.08)":"rgba(232,146,124,0.08)",borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`}},h("div",{style:{flex:1}},h("div",{style:{fontSize:"14px",fontWeight:600}},c.item),c.yen?h("div",{style:{fontSize:"11px",color:"#999",marginTop:"2px"}},c.yen):null),h("div",{style:{fontSize:"15px",fontWeight:700,marginRight:"12px"}},"NT$ "+c.amount.toLocaleString()),h("div",{style:{fontSize:"10px",padding:"3px 8px",borderRadius:"20px",fontWeight:600,background:c.paid?"#8BC89B":"#E8927C",color:"#fff"}},c.paid?"已付":"未付")))});
+    content.append(h("div",{style:{marginTop:"20px",background:"#fff",borderRadius:"14px",padding:"16px 20px",border:"1px solid #eee"}},h("div",{style:{fontWeight:700,fontSize:"14px",marginBottom:"12px"}},"每人分擔"),h("div",{className:"summary-grid"},...MEMBERS.map(m=>h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"10px 14px",borderRadius:"12px",background:m.color+"10"}},h("span",{style:{fontSize:"22px"}},m.emoji),h("div",null,h("div",{style:{fontSize:"12px",fontWeight:600,color:m.color}},m.name),h("div",{style:{fontSize:"14px",fontWeight:800}},"NT$ "+perPerson.toLocaleString())))))));
+  }
+
+  app.append(content);
+  if(selectedSpot){const modal=renderSpotModal(selectedSpot);if(modal)app.append(modal)}
+}
+
+// Shopping helpers
+function addShopItem(){
+  const text=state.shopInput.trim();
+  if(!text)return;
+  const nl={...state.shopLists};
+  nl[state.activeMember]=[...nl[state.activeMember],{text,checked:false,id:Date.now()}];
+  state.shopInput="";
+  setState({shopLists:nl});
+  debouncedSync();
+}
+function toggleShopItem(id){
+  const nl={...state.shopLists};
+  nl[state.activeMember]=nl[state.activeMember].map(i=>i.id===id?{...i,checked:!i.checked}:i);
+  setState({shopLists:nl});
+  debouncedSync();
+}
+function deleteShopItem(id){
+  const nl={...state.shopLists};
+  nl[state.activeMember]=nl[state.activeMember].filter(i=>i.id!==id);
+  setState({shopLists:nl});
+  debouncedSync();
+}
+function clearCheckedItems(){
+  const nl={...state.shopLists};
+  nl[state.activeMember]=nl[state.activeMember].filter(i=>!i.checked);
+  setState({shopLists:nl});
+  debouncedSync();
+}
+
+render();
+</script>
+</body>
+</html>
