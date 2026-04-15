@@ -123,7 +123,7 @@ async function syncLoad() {
     const r = await fetch(API_URL);
     const d = await r.json();
     if (d && typeof d === 'object') { 
-      if(d.shopLists) { state.shopLists = d.shopLists; state.extraCosts = d.extraCosts || []; } 
+      if(d.shopLists) { state.shopLists = d.shopLists; state.extraCosts = d.extraCosts || []; state.fixedCostEdits = d.fixedCostEdits || {}; } 
       else { state.shopLists = d; } 
       saveShopLists(); state.syncStatus = 'synced'; state.lastSync = new Date(); }
   } catch(e) { console.error(e); loadShopLists(); state.syncStatus = 'offline'; }
@@ -135,7 +135,7 @@ async function syncSave() {
   if (!hasApi) return;
   state.syncStatus = 'saving'; render();
   try {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({shopLists:state.shopLists,extraCosts:state.extraCosts}), mode: 'no-cors' });
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({shopLists:state.shopLists,extraCosts:state.extraCosts,fixedCostEdits:state.fixedCostEdits}), mode: 'no-cors' });
     state.syncStatus = 'synced'; state.lastSync = new Date();
   } catch(e) { console.error(e); state.syncStatus = 'offline'; }
   render();
@@ -218,10 +218,10 @@ const HOTELS=[{dates:"4/15",name:"富士吉田西旅館",area:"富士吉田",spo
 const SUGGESTED_ITEMS={0:["藥妝","面膜","零食伴手禮","衣服"],1:["藥妝","零食","公仔/玩具","衣服"],2:["清酒","保健食品","電器","伴手禮"],3:["保養品","精品包","甜點伴手禮","廚房用品"]};
 
 // ─── STATE ───
-let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:"",extraCosts:[],costItemInput:"",costAmountInput:"",costCurrency:"JPY",costPaidBy:0,costSplitAmong:[0,1,2,3],editingCostId:null,editingFixedId:null};
+let state={tab:"itinerary",syncStatus:"idle",lastSync:null,activeDay:0,checkedItems:{},selectedSpot:null,activeMember:0,shopLists:{0:[],1:[],2:[],3:[]},shopInput:"",extraCosts:[],costItemInput:"",costAmountInput:"",costCurrency:"JPY",costPaidBy:0,costSplitAmong:[0,1,2,3],editingCostId:null,editingFixedId:null,fixedCostEdits:{}};
 
-function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d);const c=localStorage.getItem("tokyo-trip-costs");if(c)state.extraCosts=JSON.parse(c)}catch(e){}}
-function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists));localStorage.setItem("tokyo-trip-costs",JSON.stringify(state.extraCosts))}catch(e){}}
+function loadShopLists(){try{const d=localStorage.getItem("tokyo-trip-shop");if(d)state.shopLists=JSON.parse(d);const c=localStorage.getItem("tokyo-trip-costs");if(c)state.extraCosts=JSON.parse(c);const f=localStorage.getItem("tokyo-trip-fixed");if(f)state.fixedCostEdits=JSON.parse(f)}catch(e){}}
+function saveShopLists(){try{localStorage.setItem("tokyo-trip-shop",JSON.stringify(state.shopLists));localStorage.setItem("tokyo-trip-costs",JSON.stringify(state.extraCosts));localStorage.setItem("tokyo-trip-fixed",JSON.stringify(state.fixedCostEdits))}catch(e){}}
 if(hasApi){syncLoad()}else{loadShopLists();}
 
 function setState(updates){Object.assign(state,updates);render()}
@@ -419,7 +419,9 @@ function render(){
   // ── COSTS ──
   if(ct==="costs"){
     content.append(h("div",{className:"cost-cards"},h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#E8927C,#d4765e)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"總費用"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+total.toLocaleString())),h("div",{className:"cost-card",style:{background:"linear-gradient(135deg,#7CB5E8,#5a9ad5)"}},h("div",{style:{fontSize:"11px",opacity:0.8,marginBottom:"4px"}},"每人平均"),h("div",{style:{fontSize:"24px",fontWeight:800}},"NT$ "+perPerson.toLocaleString()))));
-    // Pre-trip fixed costs
+    // Pre-trip fixed costs - apply saved edits
+    const fe=state.fixedCostEdits||{};
+    COSTS.forEach(c=>{if(fe[c.id]){Object.assign(c,fe[c.id])}});
     content.append(h("div",{style:{fontSize:"13px",fontWeight:700,marginBottom:"8px",color:"#2a2a3e"}},"行前固定費用"));
     COSTS.forEach(c=>{
       const fp=MEMBERS[c.paidBy||0];
@@ -445,7 +447,10 @@ function render(){
           h("div",{style:{display:"flex",gap:"4px",marginBottom:"8px"}},...MEMBERS.map((mem,i)=>{
             const sp=c.split||[0,1,2,3];const inS=sp.includes(i);
             return h("button",{style:{flex:1,padding:"5px 2px",borderRadius:"8px",border:inS?"2px solid "+mem.color:"1.5px solid #eee",background:inS?mem.color+"15":"#f9f9f7",cursor:"pointer",fontSize:"11px",fontWeight:inS?700:500,color:inS?mem.color:"#ccc",fontFamily:"inherit",opacity:inS?1:0.5},onClick:()=>{if(!c.split)c.split=[0,1,2,3];if(inS&&c.split.length>1)c.split=c.split.filter(x=>x!==i);else if(!inS)c.split.push(i);render()}},mem.emoji+(inS?" ✓":""))})),
-          h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.editingFixedId=null;render()}},"✓ 儲存")
+          h("button",{style:{width:"100%",padding:"8px",borderRadius:"8px",border:"none",background:"#8BC89B",color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{
+              if(!state.fixedCostEdits)state.fixedCostEdits={};
+              state.fixedCostEdits[c.id]={amount:c.amount,paid:c.paid,paidBy:c.paidBy,split:c.split?c.split.slice():null};
+              state.editingFixedId=null;setState({});debouncedSync()}},"✓ 儲存")
         ));
       }else{
         content.append(h("div",{className:"cost-item",style:{borderLeft:`3px solid ${c.paid?"#8BC89B":"#E8927C"}`,cursor:"pointer",flexWrap:"wrap"},onClick:()=>{state.editingFixedId=c.id;render()}},
